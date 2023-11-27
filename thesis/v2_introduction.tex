@@ -1,0 +1,27 @@
+\chapter{Introduction}
+
+
+This thesis examines a specific applied mathematics problem suggested by the Finnish Meteorological Institute(FMI). The goal is to solve the geographic location and panel installation angles of photovoltaic solar power installations using only the power output data. The chosen method breaks the problem of solving the geographic location and panel angles into separate algorithms. In practice, this means that the algorithms used can be less complex as they do not have to solve every unknown variable simultaneously and visualizations of individual algorithms should also be more straightforward as 2-dimensional data can be graphed with ease. Using multiple algorithms also splits the parameter space into smaller spaces, thus improving the performance of fitting algorithms. And the final benefit is the ability to focus on solving only the unknown parameters. For example, if the geolocation of a system is known and the panel installation angles are not, there is very little reason to use a model that would solve geolocation and panel angles without taking into account that some parameters are already known. 
+
+
+The applications of parameter estimation algorithms would be in improving the quality of metadata in solar PV datasets. This could have implications for solar PV research but the existance of such algrithms poses some privacy and security related questions as well. Whether these research benefits and concerns are realized, depends on the accuracy, and to some extent the ease of use of the algorithms.
+%If algorithms for solving geographic location and panel installation angles can be constructed, their immediate applications 
+
+
+A similar study was done by N. Haghdadi et al. in 2017\cite{navid_australian_article}. The 2017 article contains results from five case studies where the standard deviation of longitude prediction errors is less than $1.5^\circ$, reaching as low as $0.08^\circ$ with case study 1-2. The standard deviation of latidude predictions is higher at less than 3.5$^\circ$ with the best result in case study 2-2 with standard deviation of 1.65$^\circ$. Azimuth and tilt predictions are reported as two separate angle error values with azimuth prediction errors reaching values between 4$^\circ$ and 27$^\circ$ and tilt 1.3$^\circ$ to 11.5$^\circ$. These forementioned results are not directly comparable to the results shown in this thesis due to different datasets, geographic location and local climate, but they provide some perspective.
+
+
+
+
+
+%The most similar study to this that was found during literary review was done by N. Haghdadi et al. in 2017\cite{navid_australian_article}. In the 2017 paper, the resulting 
+%Perhaps the most similar study was done by N. Haghdadi et al. in 2017\cite{navid_australian_article}. In Haghdadi's paper, the standard deviation and mean absolute deviation of estimated 
+
+
+%for longitude are both less than 1.5$^\circ$ in the five listed case studies, reaching as low as 0.08$^\circ$ in case study 1-2. The standard deviation of latitudes is less than 3.5$^\circ$ for each case study; the panel tilt deviation is less than 11.5$^\circ$, and the azimuth is less than 27.5$^\circ$.
+%Haghdadi's article uses the same method for determining the longitude, but the methods for determining the other variables are different. 
+
+Another article of relevance written by M.K. Williams et. al. in 2012\cite{older_solar_solver_article} proposes multiple methods for determining the locations and orientations of solar PV installations. Perhaps the most interesting contribution of the 2012 article is the network approach to determining geographic location. This method relies on a grid of installations with known and accurate geolocation and installation angles. According to the authors, this networked approach works up to a 10-mile accuracy when the grid of known installations is dense around the estimated installation. This could make the network approach preferable for electric companies or institutions with large amounts of data. But as of now, it does not seem usable for FMI.
+
+
+%These methods include the same longitude algorithm as Hagdadis's article\cite{navid_australian_article}, but perhaps the most interesting contribution is the network approach to determining geographic location. This earlier article relies on a grid of installations with known and accurate geolocation and installation angles. According to the authors, this networked approach works up to 10-mile accuracy when the grid of known installations is dense around the installation location. This could make the network approach preferable for electric companies or institutions with large amounts of data. But as of now, it does not seem usable for FMI.

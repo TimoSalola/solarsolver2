@@ -1,0 +1,653 @@
+\chapter{Estimating panel angles}
+Solar panel installation angles are a large factor in deciding the energy output of a PV system. If panel angles can be freely chosen during planning and installation phases, it can make sense to either optimize for total power generation or power generation during peak consumption hours. This means that even if installation angles could be freely chosen, installation angles are unlikely to be the same for every system in the same geographical region. Panel angles may also be restricted by installation sites and mounting types.
+
+% Panel racks have to be installed based on the available area 
+
+%Installation type also plays a factor in choosing the panel angles. Panel angles may be restricted by 
+
+ %In so called flush rooftop installations, the panels are installed to run along the roof and so the angles can not be freely chosen. Panels can also be rack mounted and these racks tend to be installed and oriented based on the available area as is the case with \ref{fig_fmikumpula_panels}. Due to the forementioned reasons, panel angles vary from installation to installation.
+
+Panel angles can be difficult to measure accurately. The tilt angle of the panels or the angle between the panel normal and zenith(the point directly above) can easily be measured with an angle ruler and a bubble level, but the azimuth angle of the panels is much harder to measure with the same degree of accuracy. If an accurate compass is used and the difference between the magnetic north and the geographic north is taken into account, metal structures and electrical systems nearby can still distort local magnetic fields enough to cause errors in measurements. The challenges in taking accurate measurements are not insurmountable, but they may contribute to the inaccuracies and the lack of available information in PV installation parameter metadata. 
+
+The space of possible panel installation angles can be thought as a half unit sphere in a spherical coordinate system where each point on the surface represents a direction to which the normal of the solar panels could be directed towards. A visualization of parameter space in 3D and 2D is shown in \ref{fig_halfdome} and \ref{fig_anglespace1}. The 3 dots in the subfigure b) mark the zenit for which azimuth is not well defined(red), the installation angles of FMI Helsinki installation azimuth $135^\circ$ tilt $15^\circ$(blue) and a close to power generation maximized installation with directly south facing panels with the tilt of $45^\circ$(black).
+
+
+\begin{figure}[h]
+	
+     \centering
+     \begin{subfigure}[b]{0.35\textwidth}
+         \centering
+         \includegraphics[width=\textwidth]{pics/halfdome}
+         \caption{The space of possible angles as a 3D half sphere surface. Each point represents a possible tilt and azimuth combination.}
+         \label{fig_halfdome}
+     \end{subfigure}
+     \hfill
+     \begin{subfigure}[b]{0.35\textwidth}
+         \centering
+         \includegraphics[width=\textwidth]{pics/polarplot}
+         \caption{2D projection of the angle space, distance from center denotes the tilt angle of the panels and angle marks the azimuth.}
+         
+         \label{fig_anglespace1}
+     \end{subfigure}
+     \hfill
+     \caption{Angle space visualizations.}
+     \label{fig_anglespace}
+\end{figure}
+
+
+\noindent Estimating panel installation angles requires the use of multiple functions, each of which can be defined in multiple ways. These functions are defined in the following sections.
+\begin{itemize}
+  \item Prediction error function for quantifying how good a prediction was when the correct panel parameters are known.
+  \item Model error function for measuring the error between simulated power values and measured power values.
+  \item Multiplier matching function for matching the magnitude of simulated power values with the magnitude of measurements. This does not change the shape of simulations.
+  \item Angle space discretization function for discretizing the angle space into $n$ discrete points which can then be tested with model error function.
+\end{itemize}
+
+
+
+
+\section{Prediction error function}
+%The first part in developing a panel installation estimation algorithm is creating a metric for measuring how well the algorithm performs. 
+In this thesis, the proposed error estimation method combines the tilt and azimuth delta values into one error angle value, the angular distance between two points on a spherical surface. The goal is then to develop a panel angle estimation function which achieves the lowest angle error value with the available datasets.
+
+Alternative approaches can also be chosen as the function or functions for measuring the distance between two points in angle space can be defined in multiple ways. The simplest way is to use the delta of known tilt and azimuth angles as two separate error values without normalizing in any way. This method was used in Hagdadi's 2017 article but such values are not direcly comparable between installations as the significance of azimuth delta depends on tilt angle.
+
+%Measuring the distance between two coordinate pairs in angle space is more complicated than measuring errors in latitudinal or longitudinal degrees. This difficulty rises from how the azimuth angle lines converge at the pole, resulting in a coordinate system where azimuth delta values are disconnected from the phenomena which they are trying to describe. If the tilt angle is near zero, azimuth delta becomes meaningless but at high tilt angles, even small azimuth delta values can be significant. If this is not corrected for, using azimuth and tilt deltas (changes in angles) as algorithm performance metrics would incorrectly suggest that the data quality of low tilt installations is lower than that of high tilt installations, or that the system is less capable of estimating the parameters of low tilt installations. Due to these reasons, a better way of measuring the distance between two points is needed, luckily the center angle between two points on an unit sphere is easy to solve with geometry and the resulting equation is rather simple.
+
+%While there are no issues with using angles to denote the direction of the panels, the angle values do not map the possible panel angles into the angle space in a way which would make measuring the difference between two angle space coordinates easy. The issues rises from how the azimuth angle lines converge at the pole, resulting in a coordinate system where azimuth delta values are disconnected from the phenomena which they are trying to describe. For example, a 45 degree azimuth delta is fairly significant at tilt of 90 degrees but almost insignificant at 15 degree tilt. If this is not corrected for, using azimuth and tilt deltas (changes in angles) as algorithm performance metrics would incorrectly suggest that the data quality of low tilt installations is lower than that of high tilt installations, or that the system is less capable of estimating the parameters of low tilt installations. Due to these reasons, a better way of measuring the distance between two points is needed, luckily the center angle between two points on an unit sphere is easy to solve with some geometry and the resulting equation is rather simple.
+
+\vspace{3mm}
+\noindent\textbf{Deriving angle space distance equation}
+
+\noindent Let $v= [v_1, v_2]$ and $k = [k_1, k_2]$ be two component angle-space vectors so that $v_1$, $k_1$ $\in$ $[0,90]$ and $v_2$, $k_2$ $\in [0,360]$. These vectors represent points on the surface of a unit sphere and their components are the angles of spherical coordinate system. The cartesian coordinates of these points are:
+	\begin{align}
+	x_v &= sin(v_1)cos(v_2)\\
+	y_v &= sin(v_1)sin(v_2)\\
+	z_v &= cos(v_1)
+  \end{align}
+  And
+  \begin{align}
+	x_k &= sin(v_1)cos(v_2)\\
+	y_k &= sin(v_1)sin(v_2)\\
+	z_k &= cos(v_1)
+  \end{align}
+\noindent And the cartesian distance between these two points can be calculated with the following equation:
+\begin{align}
+	d = \sqrt{(x_v-x_k)^2 + (y_v-y_k)^2+(z_v-z_k)^2}
+\end{align}
+
+
+\noindent The two points and the origin form an isoceles triangle with the sides from the origin to the vector end points having the length of 1 while the distance between the vector end points is the same as d.
+
+\noindent As the lengths of three sides are known, the angles of the triangle can be calculated with the cosine rule. 
+\begin{align}
+	a^2 &= b^2 + c^2 - 2bc \cos(A)
+\end{align}
+Where
+\begin{conditions}
+ a     &  Side opposing the angle A, same as earlier value d \\
+ b     &  Side opposing angle B, value is 1  \\   
+ c	   &  Side opposing angle C, value is 1
+\end{conditions}
+\noindent Substituting known values into the cosine equation.
+
+\begin{align}
+	a^2 &= b^2 + c^2 - 2bc \cos(A)\\
+	d^2 &= 1^2 + 1^2 - 2 \cos(A) \\
+	d^2 &= 2 - 2 \cos(A)
+\end{align}
+
+\noindent Solving for angle A
+\begin{align}
+	d^2 &= 2-2\cos(A)\\
+	2 \cos(A) &= 2 -d^2 \\
+	\cos(A) &= \frac{2-d^2}{2} \\
+	A &= \cos^{-1}(\frac{2-d^2}{2})
+\end{align}
+
+\noindent Renaming $A$ as $Error$.
+
+\begin{align}
+	Error &= \cos^{-1}(\frac{2-d^2}{2}) \label{errorangle}
+\end{align}
+
+
+\noindent By first calculating the distance between the vectors using equations 5.1-5.7 and then substituting the distance into equation 5.16, the resulting angle can then be used as an error value between two panel angle measurements. Python code based on this proof is included in appedix \ref{angular_distace_appendix}.
+
+
+% This error value is the same as the angle between two points on the surface of a sphere. %In addition, if the deviation occurs only on the tilt axis, the error value and the tilt error are the same.% This makes the error values intuitive.
+%In some ways, this method of calculating an error angle is analogous to moving the two angle vectors so that one of them aligns with the 0 tilt point and computing the tilt delta between the two points. Because of this, the error values are fairly intuitive and the error value should better represent the actual difference between installations than other error values calculated via other means.
+
+
+\vspace{5mm}
+
+%\section{Angle estimation error functions}
+%The process of angle estimation requires the use of error estimation functions. The first function is needed for testing the accuracy of the algorithm by translating the known installation angles and the estimated angles into a meaningful error value. This is nontrivial as moving by a set angle value on the tilt and azimuth axis in spherical coordinate space result in different cartesian distances depending on the starting point. 
+
+
+%The second function or set of functions is needed for evaluating how well a simulated irradiance curve fits the measurement data. Functions of this type can be used for parameter estimation by testing out possible parameter combinations and and choosing the combination which results in the lowest error between the simulated and measured values.
+
+
+\newpage
+\section{Simulation error function}
+\label{section_simulation_error_function}
+Simulation error function measures how much the predicted power generation values vary from the measured power generation values. The purpose of the simulation error function is to be able to generate a single numerical value which describes how well a certain parameter combination models the measurements. By then testing out multiple parameter combinations, the combination with the lowest simulation error function value should be the best fit and the parameters used for the simulation should be within a small error of the physical parameters of the solar PV installation. In \ref{fig_error} the error between a cloud free day and randomly chosen set of wrong simulation parameters is visualized.
+
+
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.6\linewidth]{pics/error}
+\figcaption{Error area between measured power values and simulated irradiance values with different panel installation angles.}
+\label{fig_error}
+\end{figure}
+
+
+
+\newpage
+\subsection{Area based error function}
+%\noindent \textbf{Area based error function}
+The following function can be used in order to get a numerical value which signifies the area between simulated and measured power values. 
+
+\begin{align}
+	Error =  \Sigma_{t=0}^{1439} |m(t)-p(t)| \label{areaerror}
+\end{align}
+
+\noindent Where $m(t)$ is the measured power at minute $t$ and $p(t)$ is simulated power at minute $t$.
+
+\vspace{5mm}
+\noindent The error values can also be normalized so that the error value reflects the average percentual deviation between the measured and modeled values for each minute.
+
+\begin{align}
+	Error\_per\_minute =  \frac{\Sigma_{t=a}^{b} m(t)/p(t)}{b-a} \label{areaerrorpercents}
+\end{align}
+
+\noindent Where $m(t)$ is the measured power at minute $t$ and $p(t)$ is simulated power at minute $t$.
+
+\subsection{Alternative simulation error functions}
+\noindent Other error estimation methods could be used as well. Skew values, peak power generation minutes and other similar charasteristics could be measured and matched. The benefit of such charasteristics matching based error algorithms is that charasteristics errors have a direction as well as magnitude and these could be used in order to estimate the proximity and direction of the best fit in angle space. 
+
+The downsides of using charasteristics are that measurement data contains noise which can distort the estimated values of charasteristics and having a direction and a magnitude is of limited value unless additional functions are created for turning these error values into directions in parameter space. These relationships between traits, their error directions and magnitudes could prove to be difficult to solve.
+
+
+% Examples of some of the possible charasteristics can be seen in \ref{fig_charasteristics}.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.5\linewidth]{pics/poa_charasteristics}
+\figcaption{Center of mass, highest value and knee minute marked on a simulated irradiance figure.}
+\label{fig_charasteristics}
+\end{figure}
+
+
+
+
+\newpage
+\section{Multiplier matching}
+As the plane of array irradiance model models the solar radiation towards a virtual 1 m$^2$ sized panel, using the values to simulate the power generation of a solar power installation requires the use of a multiplier. This multiplier is related to the efficiency and the surface area of the solar PV installation.
+
+%holds information on the surface area and the efficiency of the solar panel installation. %For example, a 1 m$^2$ installation with the efficiency of 15\% would have the multiplier of 0.15 while as a 10 m$^2$ installation with the same efficiency would require the multiplier value to be 1.5. Thus the relationship between multiplier, efficiency and surface area is multiplier = efficiency*area.
+
+%The multiplier value can be necessary for installation angle solving depending on the methods used, luckily solving the multiplier value can be almost trivial.
+
+\subsection{Area based multiplier matching}
+The multiplier value can be solved by making the assumption that a plane of array irradiance curve $p(t)$ with correct simulation parameters matches the measurements curve $m(t)$ in its shape but not magnitude. By calculating the sum of simulated and measured power values, their ratio can then be used as a multiplier. After scaling $p(t)$ with a multiplier to match $m(t)$ the two curves should be nearly inditinquishable. 
+%This matching can be done by taking sums of measured and simulated irradiance and power values over a day and generating a ratio based on these sums. Thus, multiplier can be defined as follows:
+
+\begin{align} 
+	M_{multiplier} =  \frac{\Sigma_{t=0}^{1439} m(t)}{\Sigma_{t=0}^{1439} p(t)}\label{function_multipliermatch}
+\end{align}
+
+%And if the two curves do not match in shape, multiplying the simulated values by a constant should not change this fact as the ratio between measurements $m(t_0)$ and any other measurement $m(t_1)$ stays the same when both are multiplied by a non-zero multiplier. While this means that the multiplier variable can not be solved separately from panel installation angles, the multiplier can still be estimated each time a new set of parameters is evaluated. As the multiplier estimation method relies on the computation of two sums, the operation is computationally fast.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.6\linewidth]{pics/areamatching2}
+\figcaption{Visualization of automated multiplier matching. Measurement data from FMI Helsinki dataset, plane of array irradiance simulation was computed with FMI Kumpula coordinates and installation angle parameters.}
+\label{fig_area_match}
+\end{figure}
+
+
+\newpage
+
+\subsection{Segmented multiplier matching}
+
+
+\noindent The earlier multiplier matching method falls apart if the measurements used for multiplier solving contain deviations caused by clouds, trees or other sources. If the energy production during a certain section of the day varies from the expected, then this abnormal segment will affect the resulting multiplier value. If these deviating segments could be avoided, then partially cloudy days could still be used for multiplier matching. The process of segmentation can be done with multiple different methods. Here the inverval between the first and the last non-zero power minute of the day was split into 10 segments of equivalent length.
+
+
+
+%day into multiple segments and then using the area matching algorithm on each of these segments to compute multiple multiplier values. If these multiplier values contain a tight cluster, then the average of this cluster can be used to approximate the correct multiplier value.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.8\linewidth]{pics/10segmentcloudy}
+\figcaption{Partially cloudy day split into 10 segments.}
+\label{fig_segment_match_segments}
+\end{figure}
+
+
+\noindent Now that the data is split into segments, the earlier area based multiplier algorithm can be used to compute a multiplier value for each segment. A mathematical representation for the segments $S_i$ multiplier $M_i$ could be as follows. 
+
+\begin{align}
+	M_i =  \frac{\Sigma_{t=a_i}^{b_i} m(t)}{\Sigma_{t=a_i}^{b_i} p(t)}
+\end{align}
+
+\noindent Where $a_i$ and $b_i$ are the first and last minutes of the interval \textit{i}.
+
+
+
+\begin{table}[!ht]
+\centering
+\begin{tabular}{c|c} \hline
+
+Interval & Multiplier\\
+\hline
+$[299, 367]$ & 1.26 \\
+$[368, 437]$ & 3.22 \\
+$[438, 506]$ & 16.56 \\
+$[507, 576]$ & 21.68 \\
+$[577, 646]$ & 21.58 \\
+$[647, 715]$ & 21.52 \\
+$[716, 785]$ & 21.23 \\
+$[786, 854]$ & 19.80 \\
+$[855, 924]$ & 16.08 \\
+$[925, 994]$ & 16.80 \\
+\hline\hline
+\end{tabular}
+\tabcaption{Segment based multiplier matching intervals and resulting multipliers. FMI Kumpula dataset day [2018 - 85] was used with irradiance simulation parameters listed in \ref{table_fmi_helsinki_kuopio_parameters}.}
+\label{table_segmentmatch1}
+\end{table}
+
+\vspace{10mm}
+
+\noindent In \ref{table_segmentmatch1} the segments 4 to 7 are all tightly grouped and their average is 21.50. These closely grouped segments, commonly referred to as clusters in the field of data science, can be identified algorithmically by locating a window that encompasses a relatively high number of values within it. For example a $\pm 5\%$ window $[M_i*0.95, M_i*1.05]$ would contain the cluster if any of the 4 cluster values was used as as $M_i$.
+
+A possible issue with the clustering algorithm could rise from random chance. The last multiplier values 16.08 and 16.80 are close enough to the early 16.56 that due to random variation in the data, the algorithm could in some cases choose the wrong multiplier value cluster. The low values are unexpected as the plot appears to be free from cloud interference and it is possible that the deviation from the expected values occurs due to increased reflectivity of the solar panels resulting from a higher angle of incidence. This issue could be midigated to some extent by using a more advanced solar power generation simulation algorithm.
+
+
+% High reflectivity is especially difficult to account for in this stage as the panel angles are not yet known.
+
+
+%Regarding the observation that the last two segments result lower multiplier values than expected, despite the plot appearing to be smooth and interference free
+
+%absence of apparent cloud interference in the plot, one possible explanation could be attributed to increased reflectivity of the solar panels resulting from a higher angle of incidence. High reflectivity is especially difficult to account for in this stage as the panel angles are not yet known.
+
+% In figure \ref{fig_segment_match_segments} the same segments, marked in red to pink, can be seen to be well-behaving. The lower than expected multipliers for segments 1 to 3 are to be expected, but the deviance of segments 8 to 10 is somewhat unintuitive. One explanation could be higher reflectivity of the solar panels caused by the higher angle of incidence.
+
+
+
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.8\linewidth]{pics/segmentmatch1}
+\figcaption{Comparison of area and segmented area based multiplier matching algorithms on a partially cloudy day.}
+\label{fig_segment_match}
+\end{figure}
+
+
+%This can be seen in figure \ref{fig_segment_match} where a day from FMI Kumpula dataset is plotted against an area matched irraidance simulation. Here the low power generation during early minutes of the day results in an underestimated multiplier.
+
+%If this lower than normal power generation segment of the day could be algorithmically detected and avoided, the previously shown area matching algorithm would still allow the simulated curve to be matched with the non-cloudy section of the data. 
+
+
+
+%The table \ref{table_segmentmatch1} shows 10 different segments and their corresponding multiplier values when area matching algorithm is applied to them. In the ideal case, all of these multiplier values would be identical, but due to shading in the early hours of the day, the first multiplier values are much lower than they would be for a clear day. The important values in this table are the tightly grouped multipliers 21.69, 21.57, 21.55 and 21.30. Their average 21.52 was used for the segment matched purple line in \ref{fig_segment_match} and at least in this case, the segment matched curve follows the measurements closely through most of the day. 
+
+%This cluster of values can be detected algorithmically by taking each multiplier value $M_i$ and counting how many other values on the multiplier list fit with within the range of [$M_i - \delta $, $M_i + \delta $]. The more values that fit in this interval, the more likely those values are to perform well as the fitting multiplier. Delta value of 1 was used for figure \ref{fig_segment_match}. The clustering method and the delta values were arbitrarily chosen and so further experimentation with different clustering methods and delta values is recommended if such algorithms are applied to other datasets. For example, proportional instead of absolute ranges such as [$M_i (1- \delta) $, $M_i(1+\delta) $] may perform better when PV installations have differing power output ratings.
+
+
+%Methods similar to the segment multiplier matching algorithm detailed in this section could be used for detecting cloudy time periods or shading.
+
+
+
+
+
+
+\newpage
+
+\subsection{Translating multiplier values to PV system rated power values}
+As the simulated irradiance values are an estimation of power radiated towards a sigle square meter sized imaginary panel, the scaling multiplier can be used for estimating the power rating of a solar PV installation. The power ratings of PV installations describe the expected power generation in watts that could be expected to be generated during peak power generation hours if the panels were oriented optimally.
+
+With the help of the rated power value, the surface area of the panels can be estimated. The precise estimation is difficult as different panel types and panel age affect the efficiency of PV systems, but having some frame of reference for installation sizes could prove to be useful in other studies where lidar data or satellite images are available.
+
+\noindent \textbf{Rated power estimation equation}
+\begin{align}
+	RatedPower =  MP \label{ratedpower}
+\end{align}
+Where $M$ is the multiplier required to match the POA simulated values with measured values and $P$ is an estimation for solar irradiance per square meter or approximately 1000w. 
+
+\vspace{5mm}
+%The equation is as simple as it is because the plane of array irradiance simulations used for estimating the multiplier value already take the power generation losses due to different panel installation angles into account. 
+\noindent By using \ref{ratedpower} and the clustered multiplier values from \ref{table_segmentmatch1}, the power rating of the Helsinki installation would be estimated as 21.5KW which is within close proximity the reported 21KW in \ref{table_fmi_helsinki_kuopio_parameters}.
+
+
+
+
+
+\noindent \textbf{Panel area estimation equation}
+\begin{align}
+	PanelArea =  RatePower * \frac{1m^2}{\eta}
+\end{align}
+Where $\eta$ is the efficiency of solar panels, typically in the range of 0.15 to 0.20. The efficiency coefficient varies according to panel type, age, variance in manufacturing and other factors.
+\vspace{5mm}
+
+\newpage
+\section{Angle space discretization}\label{angle_space_discretization}
+The next step is angle space discretization. The panel angles are denoted with a doublet of tilt and azimuth values, ranging from 0 to 90 and 0 to 360 respectively. If the tilt and azimuth axes are discretized individually in steps of 5 so that tilt is [0, 5, 10, 15... 90] and azimuth [0, 5, 10, 15... 355], the permuations of these tilt and azimuth values create an even grid in the euclidean projection of angle space where x = tilt, y = azimuth. However as the physical phenomena represented by the angle values is not a point on a plane but a point on a half-sphere surface, this results in an uneven discretization \ref{fig_5step}. A better option is to use Fibonacci lattice \cite{fibolat2} for a more even distribution of points on a spherical surface \ref{fig_fibolat}.
+
+%or another algorithm for a more even distribution of points on a spherical surface \ref{fig_fibolat}.
+
+\noindent \textbf{Fibonacci lattice point n of k equation}
+\begin{align}
+	s &= n + 0.5 \\
+	\phi &= acos(1 - 2 s / k) \\
+	\theta &= \pi s (1 + \sqrt{5})
+\end{align}
+Where $n$ is the point number, $k$ is the amount of points, $\phi$ is the panel tilt angle and $\theta$ is the azimuth angle.
+\begin{align}
+	x &= cos(\theta)sin(\phi)\\
+	y &= sin(\theta)sin(\phi)\\
+	z &= cos(\phi)
+\end{align}
+$x$, $y$ and $z$ are the corresponding cartesian coordinates.
+\vspace{5mm}
+
+
+\begin{figure}
+     \centering
+     \begin{subfigure}[b]{0.45\textwidth}
+         \centering
+         \includegraphics[width=\textwidth]{pics/disc5}
+         \caption{In steps of 5 discretization with 1296 points}
+         \label{fig_5step}
+     \end{subfigure}
+     \hfill
+     \begin{subfigure}[b]{0.45\textwidth}
+         \centering
+         \includegraphics[width=\textwidth]{pics/fibolat1}
+         \caption{Fibonacci lattice-based discretization with 756 points.}
+         \label{fig_fibolat}
+     \end{subfigure}
+     \hfill
+     
+\caption{Comparison of two different discretization patterns. Fibonacci lattice based discretization on right shows a more even distribution of points than the latitude-longitude lattice. The minimum density is approximately the same in both graphs despite the difference in point counts.}
+     \label{fig_5stepfibolat}
+\end{figure}
+
+\subsection{Importance of lattice density}\label{ss_lattice_density}
+The density of lattices is an important measurable charasteristic which proves useful during the optimization of angle estimation algorithm. The most useful metric would be the sphere center angle distance between neighboring points. This would be useful as it can be used for determining whether errors in predictions are lattice or function fitting related. For example, if the lattice neighbors are approximately 1 degree away from oneanother and the predicted angle is 5 degrees off from the known installation angle, then the error is caused by model fitting and not lattice density as there must have been multiple lattice points closer to the known angle point than the discovered best fit. However if grid density is near to or lower than angle estimation error, the lattice is likely to be a contriburing to angle estimation errors.
+
+Calculating neighborign center angle distances for both \textit{in-steps-of-n} and Fibonacci lattices is somewhat challenging. In \textit{in-steps-of-n}, the value \textit{n} can be used as an estimate for max center angle distance as \textit{n} will always be the tilt distance to the nearest neighbor with different tilt angle. With Fibonacci lattices the easiest way of estimating center angle distances is taking the coordinates of the first two lattice points and calculating their center angle distance with earlier error equation \ref{errorangle}. These first two points should be used as Fibonacci lattice points are distributed on a single arm spiral pattern, resulting in later sequential points being further from one another.
+
+Another method for calculating Fibonacci lattice point distances is dividing the surface area of the angle space by the amount of calculated lattice points. This area-per-point value could then be used in order to estimate how far points are from oneanother on average. In later sections, the first two points derived distance will be used.
+
+\newpage
+\section{Solving panel angles}
+Now that the geographic location and multiplier value of installation are known to be solvable and error functions have been defined, the last step is to solve the panel installation angles. The chosen method relies on splitting angle space into $n$ discrete points and evaluatin each of their fitness by calculating an error value. Here the angle space was split into 10 discrete points with fibonacci lattice \ref{angle_space_discretization} and the fitness of each point was evaluated with area error \ref{areaerror} and multiplier matching \ref{function_multipliermatch} functions. %The tilt-azimuth pair with the lowest error value was 31 
+
+
+
+\begin{figure}[h]
+\begin{floatrow}
+\ffigbox{%
+  \includegraphics[width=1\linewidth]{pics/polarplot10}
+  
+  
+}{%
+\label{fig_polar10}
+  \caption{Polar plot of test points for a single day of data from FMI Kumpula dataset.}%
+}
+\capbtabbox{%
+  \begin{tabular}{c|c|c} \hline
+
+Tilt & Azimuth & Error\\
+\hline
+18.19 & 291.25 & 3785693.23\\
+\textbf{31.79} & \textbf{153.74} & \textbf{265843.23}\\
+41.41 & 16.23 & 4331163.39\\
+49.46 & 238.72 & 4861757.21\\
+56.63 & 101.22 & 3811371.79\\
+63.26 & 323.71 & 7196389.58\\
+69.51 & 186.2 & 1795822.66\\
+75.52 & 48.69 & 5985516.23\\
+81.37 & 271.18 & 7403298.37\\
+87.13 & 133.68 & 2957569.38\\
+\hline\hline
+\end{tabular}
+}{%
+  \caption{Tilt, azimuth and error table for single day.}
+}
+\end{floatrow}
+\end{figure}
+
+
+\noindent Now that the method can be seen to work, it is time to improve the results. This can be done by generating larger lattices and thus by evaluating higher amount of datapoints, the algorithm has a higher chance of finding the global minimum error point. As per \ref{ss_lattice_density}, Fibonacci lattice of 1000 points would have the angular resolution of approximately 4 degrees where as 10000 points would be near to 1.5 degrees. The performance can also be improved by evaluating best fits for multiple days at once. The resulting point cloud of best fits can then be used for averaging out noise in the predictions.
+
+The plot \ref{fig_polar_multiyear} is a result of using the angle finding algorithm on 41 days from FMI Kumpula dataset with a Fibonacci lattice of 1000 points. The two darker spots near the center of the graph are the two most common best fits, [17.0$^\circ$, 138.4$^\circ$] with 17 and [22.7$^\circ$, 143.1$^\circ$] with 16 out of 41 days. These groupings are as close to the known installation angles of [15$^\circ$,  135$^\circ$] as could be expected from a 1000 point lattice. The next step is tightening the cluster, this can be done by adjusting the smoothness requirement of the cloud free day algorithm or by restricting the day range. In \ref{fig_polar_multiyear_summer} the tightening was accomplished with day range restrictions and 22 days were accepted by the algorithm.
+
+
+%In \ref{fig_polarplot_13days} the polar plot is a result of taking the 13 best days from FMI Kumpula dataset year 2018 and using a fibonacci lattice with 500 test points. The most common best fit was [27.5$^\circ$, 150.8$^\circ$] with 5 occurances followed by [24.1$^\circ$, 138.4$^\circ$] with 4 days. These values are close to the 
+
+\begin{figure}[h]
+\begin{floatrow}
+\ffigbox{
+  \includegraphics[width=0.95\linewidth]{pics/scatter_multiyear}
+}{
+  \caption{Best fits for multiple cloud free days from FMI Kumpula dataset.}
+  \label{fig_polar_multiyear}
+}
+\ffigbox{%
+ \includegraphics[width=0.95\linewidth]{pics/scatter_multiyear_summer}
+}{%
+\caption{Best fits when day range is restricted to days 140-220.}
+  \label{fig_polar_multiyear_summer}
+ 
+}
+\end{floatrow}
+\end{figure}
+
+As all of the estimates converge on two neighboring points, the final step is increasing the lattice resolution further. With 10 000 point lattice, the cluster tightened further \ref{fig_polar_multiyear_helsinki10k}. Out of the 22 days, 7/22 or 32\% had best fit at [19.34, 136.87] with error of 4.38 degrees and 6/22 or 27\% at [17.74, 135.06] with error of 2.74 degrees. Rest of the best fits were distributed in smaller clusters near these points. The lowest angle distance best fit was [17.09, 130.32] with angle distance of 2.46 degrees. As the angle distance errors are higher than the discretization resolution and as the predicted angles are systematically biased, it would seem that the error is caused by the solar irradiance model or model fitting and not angle space discretization.
+
+
+%As the angle distance errors are higher than the discretization resolution and as the results seem biased, the errors of the estimation algorithm would seem to be caused by inaccuracies in model fitting and not angle space discretization.
+
+
+
+\begin{figure}[h]
+\begin{floatrow}
+\ffigbox{
+  \includegraphics[width=0.95\linewidth]{pics/10khelsinki}
+}{
+  \caption{Best fits with 10 000 sample Fibonacci lattice and 22 days from FMI Kumpula dataset. Multiple years were used, day range restricted to 140-220. Actual installation angles were 15 degrees tilt, 135 azimuth.}
+  \label{fig_polar_multiyear_helsinki10k}
+}
+\ffigbox{%
+ \includegraphics[width=0.95\linewidth]{pics/kuopio10kfitsplot}
+}{%
+\caption{10 000 sample Fibonacci lattice and 16 days from FMI Kuopio dataset. Multiple years were used, day range restricted to 140-220. Actual installation angles were 15 degrees tilt, 217 azimuth.}
+  \label{kuopio10kfitsplot}
+}
+\end{floatrow}
+\end{figure}
+
+
+%\begin{figure}[h]
+%\centering
+%\includegraphics[width=0.8\linewidth]{pics/10kfitshelsinkiplot}
+%\caption{Comparison between measured values, simulated values with known installation parameters and best found fit.}
+%\label{fig_10kfitshelsinkiplot}
+%\end{figure}
+
+
+
+%day 141 predicted 17.74 135.06 delta degrees: 2.74 x
+%day 145 predicted 19.92 141.6 delta degrees: 5.3
+%day 148 predicted 19.34 136.87 delta degrees: 4.38 	x
+%day 179 predicted 17.74 135.06 delta degrees: 2.74 x
+%day 197 predicted 21.37 143.41 delta degrees: 6.87 y
+%day 198 predicted 18.37 139.79 delta degrees: 3.64
+%day 199 predicted 19.34 136.87 delta degrees: 4.38		x
+%day 157 predicted 19.92 141.6 delta degrees: 5.3
+%day 169 predicted 18.37 139.79 delta degrees: 3.64
+%day 202 predicted 17.74 135.06 delta degrees: 2.74 x
+%day 208 predicted 21.37 143.41 delta degrees: 6.87 y
+%day 143 predicted 19.34 136.87 delta degrees: 4.38		x
+%day 155 predicted 19.92 141.6 delta degrees: 5.3
+%day 164 predicted 19.92 141.6 delta degrees: 5.3
+%day 166 predicted 17.74 135.06 delta degrees: 2.74 x
+%day 171 predicted 19.34 136.87 delta degrees: 4.38		x
+%day 174 predicted 17.09 130.32 delta degrees: 2.46
+%day 175 predicted 17.74 135.06 delta degrees: 2.74 x
+%day 177 predicted 17.74 135.06 delta degrees: 2.74 x
+%day 178 predicted 19.34 136.87 delta degrees: 4.38		x
+%day 179 predicted 19.34 136.87 delta degrees: 4.38		x
+%day 200 predicted 19.34 136.87 delta degrees: 4.38		x
+
+
+
+%day 145 predicted 32.09 196.89 delta degrees: 18.65 x
+%day 192 predicted 30.5 198.01 delta degrees: 16.96 y
+%day 199 predicted 30.5 198.01 delta degrees: 16.96 y
+%day 210 predicted 34.52 197.58 delta degrees: 20.9 z
+%day 212 predicted 32.09 196.89 delta degrees: 18.65 x
+%day 213 predicted 35.07 194.65 delta degrees: 21.86 k
+%day 167 predicted 27.07 200.24 delta degrees: 13.37 i
+%day 143 predicted 30.5 198.01 delta degrees: 16.96 y
+%day 144 predicted 28.83 199.13 delta degrees: 15.21 l
+%day 145 predicted 28.83 199.13 delta degrees: 15.21 l
+%day 162 predicted 27.07 200.24 delta degrees: 13.37 i 
+%day 167 predicted 27.07 200.24 delta degrees: 13.37 i 
+
+
+\newpage
+\subsection{Evaluation of exhaustive search results}
+The estimated installation angles installations are fairly good. A delta of less than $4.5^\circ$ as was achieved with FMI Kumpula is small enough to be a result of measurement or rounding error. The estimates for FMI Kuopio are off by more than 10 degrees which is less encouraging. As the reported angles for FMI Kuopio were $15^\circ$ and $217^\circ$, it would seem like the angle measurements were rounded to nearest degree. This would eliminate the reporting accuracy as a plausible cause for the estimation errors and thus either there has been a reporting error or that the installation angle estimation algorithms are not performing as well for FMI Kuopio dataset.
+
+
+\begin{figure}[h]
+\begin{floatrow}
+\capbtabbox{%
+  \begin{tabular}{r|c|c|c} \hline
+\multicolumn{4}{c}{FMI Kumpula}\\
+\hline
+n & Tilt & Azimuth & Error\\
+\hline
+7 & $19.34^\circ$ & $136.87^\circ$ & $4.38^\circ$\\
+6 & $17.74^\circ$ & $135.06^\circ$ & $2.74^\circ$\\
+4 & $19.92^\circ$ & $141.60^\circ$ & $5.30^\circ$\\
+2 & $21.37^\circ$ & $143.41^\circ$ & $6.87^\circ$\\
+1 & $21.37^\circ$ & $143.41^\circ$ & $6.87^\circ$\\
+1 & $17.09^\circ$ & $130.32^\circ$ & $2.46^\circ$\\
+
+\hline\hline
+\end{tabular}
+}{%
+  \caption{Estimation results table for FMI Kumpula.}
+}
+\capbtabbox{%
+  \begin{tabular}{c|c|c|c} \hline
+\multicolumn{4}{c}{FMI Kuopio}\\
+\hline
+n & Tilt & Azimuth & Error\\
+\hline
+3 & $27.07^\circ$ & $200.24^\circ$ & $13.37^\circ$\\
+3 & $30.50^\circ$ & $198.01^\circ$ & $16.96^\circ$\\
+2 & $28.83^\circ$ & $199.13^\circ$ & $15.21^\circ$\\
+2 & $32.09^\circ$ & $196.89^\circ$ & $18.65^\circ$\\
+1 & $34.52^\circ$ & $197.58^\circ$ & $20.90^\circ$\\
+1 & $34.52^\circ$ & $197.58^\circ$ & $20.90^\circ$\\
+1 & $35.07^\circ$ & $194.65^\circ$ & $21.86^\circ$\\
+
+
+\hline\hline
+\end{tabular}
+}{%
+  \caption{Estimation results table for FMI Kuopio.}
+}
+\end{floatrow}
+\end{figure}
+
+
+Figures \ref{10khelsinkiplot} and \ref{10kkuopioplot} shows that the models based on best found fits are better fits than simulations done with the known parameters. This is true for both Helsinki and Kuopio datasets. This would suggest that the model fitting works as intended and that either the model is inaccurate or there is an error in reported panel angles. The more likely cause of the two is the the solar irradiance model and for some undetermined reason the error of the model is more significant for the Kuopio installation. Possible causes could be related to lower sun angles resulting in higher reflective losses or shadowing during last production hours which would also explain the uneven structure visible in the last non-zero hours in \ref{10kkuopioplot}.
+
+
+
+\begin{figure}[h]
+\caption{Comparison between a single day of measurements and two simulations. One with known installation angles and one with best found fit. Day is from FMI Kumpula dataset with reported installation angles of $15^\circ$ and $135^\circ$ degrees. Best fit at $19.34^\circ$, $136.87^\circ$}
+\centering
+\includegraphics[width=0.6\textwidth]{pics/10kfitshelsinkiplot}
+\label{10khelsinkiplot}
+\end{figure}
+
+
+\begin{figure}[h]
+\caption{Comparison for FMI Kuopio installation. Panel angles are $15^\circ$ and $217^\circ$ degrees. Best found fit at $19.34^\circ$, $136.87^\circ$
+}
+\centering
+\includegraphics[width=0.6\textwidth]{pics/10kfitskuopioplots}
+\label{10kkuopioplot}
+\end{figure}
+
+
+\section{Fast panel angle solving}
+Solving panel angles by exhaustively testing 10 000 possible grid points takes up to an hour of computation time on the test system. This is not a limiting factor in research code, but exhaustive searches are inelegant compared to more intelligent approaches. Geometric intuition would suggest that the surface created by panel angle pairs and fitness values would resemble a downwards pointing cone-like shape where the best fit is the peak of the cone. If this is true, searching the whole angle space is not necessary as a gradient descent algorithm can be used to approximate the direction in which the best fit resides.
+
+Whether the cone assumption is true can be visually examined by plotting the fitness values and observing the resulting heatmap. In \ref{fig_cone_shape}, the region where the global best fit resides is clearly the global minimum, but there appears to be a local minimum in the top part of the plot, near tilt $90^\circ$, azimuth $20^\circ$. Having more than one local minimum complicates efficient optimization but optimization is still feasible.
+
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.6\linewidth]{pics/10kfitshelsinki}
+\figcaption{Fitness heatmap.}
+\label{fig_cone_shape}
+\end{figure}
+
+\subsection{Gradient search}
+As the fitness surface is not defined by an easy to derivate multi parameter equation, directly solving for points where gradient reaches zero is challenging. However the gradient at a given point can still be numerically estimated and by taking steps in the direction of the gradient vector, local minimum can be found.
+
+In x-y coordinate space, the numerical gradient for point 
+
+\begin{align}
+	\frac{\partial f}{\partial x}  &= f(p_1+x) - f(p_1)\\
+	\frac{\partial f}{\partial y}  &= f(p_1+y) - f(p_1) \\
+	\nabla f &= \begin{bmatrix}
+	\frac{\frac{\partial f}{\partial x}}{\frac{\partial f}{\partial y}}
+	\end{bmatrix} 
+\end{align}
+
+% \frac{\partial f}{\partial x} \end{bmatrix} 
+
+% \nabla f &= \begin{bmatrix} \frac{\partial f}{\partial x \frac{\partial f}{\partial y}\end{bmatrix} 
+
+
+\newpage
+\subsection{Possible issues and further development ideas}
+
+%Graphs \ref{fig_polar_multiyear_helsinki10kplot} and \ref{fig_polar_multiyear_kuopio10kplot} show that the found best fits are better fits for the data than simulations done with correct parameters. This would suggest that the model fitting and discretization both work as intended, but that the model being fitted does not work as intended. In general, the shape of the model becomes sharper when the panel tilt is near optimal in respect to sun elevation and broader when tilt deviates. This sharpening or broadening bears some reseblense to the error caused by not taking panel reflections into account and this could explain why predicted tilt angles are higher than reported installation angles. Developing a correction algorithm may be feasible, but replacing the plane of array irradiance model with a physically accurate solar power generation model is a better option.
+
+%As the method shown earlier relies on model fitting, the accuracy of the model influences prediction accuracy. In general, the shape of the model becomes sharper when the panel tilt is near optimal in respect to sun elevation and broader when tilt deviates. This sharpening or broadening bears some reseblense to the error caused by not taking panel reflections into account and this could explain why predicted tilt angles are higher than reported installation angles. Developing a correction algorithm may be feasible, but replacing the plane of array irradiance model with a physically accurate solar power generation model is a better option.
+
+
+The algorithm steps of cloud free day detection and lattice generation are computationally fast but evaluating a high density lattice for multiple days can take several minutes. For example, the time required for the generation of \ref{fig_polar_multiyear_summer} consist of 9 seconds of data loading and preprocessing, 1 second of cloud free day detection and 11 minutes of angle pair evaluation. With 22 days and 1000 points per day, the resulting 22 000 evaluations were done at the average speed of 33 evaluations per second. This comparably long processing time is due to inefficient code but the algorithms speed can also be improved by more intelligent latticing. The general location of the best fit could be solved with a low density lattice and a local high density lattice could then be used to estimate a higher accuracy angle pair. Combining code optimizations and localized angle space lattices could reduce the computation time significantly.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

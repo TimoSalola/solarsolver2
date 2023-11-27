@@ -52,7 +52,7 @@ def print_last_loaded_data_visual():
 
     print(
         "Read " + str(len(all_days_in_dataset_df)) + " from datafile. Out of these " + str(len(accepted_days_df)) + "("
-        + "%.2f" % round(100 * len(accepted_days_df) / len(all_days_in_dataset_df), 2) + "%) were good.")
+        + "%.2f" % round(100 * len(accepted_days_df) / len(all_days_in_dataset_df), 2) + "%) passed set filters.")
 
     # plotting eventplot good days part
     for year_n in accepted_days_df["year"].unique():

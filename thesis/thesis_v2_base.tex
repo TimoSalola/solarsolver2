@@ -1,0 +1,140 @@
+\documentclass[12pt,a4paper]{uefrep}
+%
+% Note, if you are writing in Finnish, modify commented lines in this file and
+% modify also report_app.tex if you have appendices.
+%
+\usepackage[english]{babel}  % If writing in Finnish, replace egnlish with finnish
+\usepackage[T1]{fontenc}
+\usepackage{cite,url}
+\usepackage[dvips]{graphicx}
+\usepackage[tbtags]{amsmath}
+\usepackage{psfrag}
+\usepackage{ae,aecompl}
+\usepackage{color}
+\usepackage{bookmark}
+\usepackage[a-1b]{pdfx}
+\usepackage{hyperref}
+\usepackage{subcaption}
+\usepackage{listings}
+\usepackage{xcolor}
+%\usepackage{float}
+\usepackage{amsthm,amssymb}
+\usepackage{tabularx}
+\usepackage{longtable} % for table header multicolumn
+
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+
+\lstset{frame=tb,
+  language=Python,
+  aboveskip=3mm,
+  belowskip=3mm,
+  showstringspaces=false,
+  columns=flexible,
+  basicstyle=\footnotesize,
+  numbers=none,
+  numberstyle=\tiny\color{gray},
+  keywordstyle=\color{blue},
+  commentstyle=\color{dkgreen},
+  stringstyle=\color{mauve},
+  breaklines=true,
+  breakatwhitespace=true,
+  tabsize=3
+}
+
+
+% LET TESTING
+
+
+
+
+
+
+
+\hypersetup{colorlinks=true,linkcolor=blue,citecolor=red,urlcolor=cyan,breaklinks=true}
+%
+%
+\pagestyle{plain}
+\bibliographystyle{uefunsrt}
+\setlength{\textheight}{20.7cm}
+\setlength{\textwidth}{15.0cm}
+\setlength{\hoffset}{-2mm}  % Because the location of left margin depends on the printer, adjust this so that the left margin is 32 mm.
+%\setlenght{\voffset}{2mm} % If necessary, adjust the top margin to 45 mm with this parameter.
+%
+\renewcommand{\baselinestretch}{1.2}
+\newcommand{\BibTeX}{{\textrm B\kern-.05em{\textsc i\kern-.025em b}\kern-.08em
+    T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+\newcommand{\sep}{;~}
+
+\newenvironment{conditions}
+  {\par\vspace{\abovedisplayskip}\noindent\begin{tabular}{>{$}l<{$} @{${}={}$} l}}
+  {\end{tabular}\par\vspace{\belowdisplayskip}}
+
+
+
+
+\usepackage{floatrow}
+% Table float box with bottom caption, box width adjusted to content
+\newfloatcommand{capbtabbox}{table}[][\FBwidth]
+
+\usepackage[font=small,labelfont=bf,tableposition=top]{caption}
+
+\DeclareCaptionLabelFormat{andtable}{#1~#2  \&  \tablename~\thetable}
+
+
+
+
+
+\begin{document}
+
+
+%% LET TEST
+
+\makeatletter 
+\let\c@table\c@figure
+\let\c@lstlisting\c@figure
+\makeatother
+
+
+%
+\pagenumbering{roman}
+%
+\include{thesis_front}
+\newpage
+\include{thesis_abs}
+%
+\newpage                     % (Un)comment these lines depending on if you have or not have a preface
+\include{thesis_preface}     %
+%
+\phantomsection
+\hypertarget{contentpage}{}
+\bookmark[dest=contentpage]{Contents}
+\tableofcontents
+%
+\newpage
+\setcounter{page}{0}
+\pagenumbering{arabic}
+%
+
+% ############################## INCLUDES HERE
+\include{v2_introduction}
+\include{v2_datasets}
+\include{v2_tools}
+\include{v2_geolocator}
+\include{v2_angler}
+\include{v2_remarks}
+\include{v2_appendix}
+%
+\renewcommand{\bibname}{References}  %  change References to Viitteet if writing in Finnish
+%
+\phantomsection
+%
+\addcontentsline{toc}{chapter}{\bibname}
+\renewcommand{\baselinestretch}{1}
+\label{bibbib}
+\bibliography{example_refs.bib}
+%
+%\include{thesis_app} % If there are no appendices, remove this line.
+%
+\end{document}

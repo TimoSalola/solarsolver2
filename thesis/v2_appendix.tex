@@ -1,0 +1,159 @@
+\appendix
+\section{Code samples}
+The algorithms presented in this thesis are not very useful or easy to understand when presented with mathematical notations. The following listings contain code samples from github repository \cite{github_source} where the complete source code is published. 
+
+\subsection{Cloud free day selection algorithm} \label{cloudfree_code}
+% the \\ insures the section title is centered below the phrase: AppendixA
+
+The three following code listings are used by the cloud free day selection algorithm. The first listing \_\_find\_smooth\_days() returns the list of day numbers and data from days which can be considered smooth. The second is a helper function used for calculating a normalized smoothness value for a given day with the help of Fourier transform based low pass filtering and the last listing is the FFT based low pass filter.
+
+\begin{lstlisting}[language=Python, caption={Cloud free day finder main function}]
+
+def __find_smooth_days(year_xa, day_start, day_end, threshold_percent):
+    """
+    :param year_xa: xarray of one year
+    :param day_start: first day to consider
+    :param day_end: last day to consider
+    :param threshold_percent: smoothness percent, very best days for helsinki dataset have a smoothness value lower than 0.4. 1 seems to result in good values
+    :return: list of xa days and a list of day numbers
+    """
+
+    # reading year from year_xa
+    # if year_xa contains multiple years worth of data, the first will be chosen. Will most likely result in errors
+    year = year_xa.year.values[0]
+
+    smooth_days_xa = []
+    smooth_days_numbers = []
+
+    """
+    The loop below goes through every day in given range from year of data
+    If the range contains "bad days", this could cause issues. For example a day with zero power for every minute would be perfectly smooth, but at the same time it's the opposite of what we want
+    """
+    for day_number in range(day_start, day_end):
+        day_xa = splitters.slice_xa(year_xa, year, year, day_number, day_number)
+
+        smoothness_value = __day_smoothness_value(day_xa)
+
+        
+        if smoothness_value < threshold_percent:
+            smooth_days_xa.append(day_xa)
+            smooth_days_numbers.append(day_number)
+        
+
+    return smooth_days_xa, smooth_days_numbers
+\end{lstlisting}
+
+\begin{lstlisting}[language=Python, caption={Cloud free day day smoothness function}]
+def __day_smoothness_value(day_xa):
+    """
+    :param day_xa: one day of real measurement data in xarray format, has to have fields minute and power
+    :return:  percent value which tells how much longer the distance from point to point is compared to sine/cosine
+    fitted curve. Values lower than 1 can be considered good. Returns infinity if too few values in day
+    """
+
+    # no values at all, returning infinity
+    if len(day_xa["power"].values[0]) == 0:
+        return math.inf
+
+    day_xa = day_xa.dropna(dim="minute")
+
+    # extracting x and y values
+    minutes = day_xa["minute"].values
+    powers = day_xa["power"].values[0][0]
+
+    # too few values, returning inf
+    if len(powers) < 10:
+        return math.inf
+
+
+    # transforming powers into fourier series and low pass filtering
+    powers_from_fourier_clean = __fourier_filter(powers, 6)
+
+    # this normalizes error in respect to value count, single value
+    errors = abs(powers_from_fourier_clean - powers)
+    errors_sum = sum(errors)
+    errors_normalized = errors_sum / len(powers)
+
+    # if max of powers is 0.0, then division by 0.0 raises errors. If we check max for 0.0 and return infinity
+    # our other algorithm should disregard this day completely
+    if max(powers) == 0.0:
+        return math.inf
+    # normalizing in respect to max value and turning into percents
+    errors_normalized = (errors_normalized / max(powers)) * 100
+    # this line may cause errors due to division max power 0.0
+
+    return errors_normalized
+
+\end{lstlisting}
+
+\begin{lstlisting}[language=Python, caption={Cloud free day finder low pass filter}]
+
+def __fourier_filter(values, values_from_ends):
+    """
+    :param values: array of values
+    :param values_from_ends: how many of the longest frequencies to spare
+    :return: values after shorter frequencies are removed
+    """
+
+
+    # FFT based low pass filter
+    # Converting values to Fourier transform frequency representatives
+    values_fft = numpy.fft.fft(values)
+    # values in values_fft represent the frequencies which make up the values array. Structure is as follows:
+    # [constant, low, low, ... med, med .... high, high .... med, med .... low,low]
+    # this means that by zeroing out most of the values in the center, only the low frequency parts can be chosen.
+
+
+    # zeroing out every value which is further than [values_from_ends] from the ends of the values_fft array
+    values_fft[1+values_from_ends:len(values_fft) - values_from_ends] = [0] * (len(values_fft)-1 - 2 * values_from_ends)
+
+
+    # reversing the fft operation, resulting in values with only low frequency components
+    values_ifft = numpy.fft.ifft(values_fft)
+
+    # ifft results can be partly imaginary, eq. 2.5 + 2i.
+    values_ifft_real = []
+
+    # saving only real components
+    for var in values_ifft:
+        values_ifft_real.append(var.real)
+
+    # returning the result of the low pass filter
+
+    return values_ifft_real
+\end{lstlisting}
+
+
+\subsection{Angular distance equation} \label{angular_distace_appendix}
+This sample contains code used for computing the angular distance between two points on unit sphere surface. Used in panel installation angle error measurements.
+
+\begin{lstlisting}[language=Python, caption={Angular distance function}]
+def angular_distance_between_points(tilt1, azimuth1, tilt2, azimuth2):
+    """
+    Calculates the angular distance in degrees between two points on unit sphere surface.
+    :param tilt1: point 1 tilt angle in degrees
+    :param azimuth1: point 1 azimuth angle in degrees
+    :param tilt2: point 2 tilt angle in degrees
+    :param azimuth2: point 2 azimuth angle in degrees
+    :return: sphere center angle between the two points
+    """
+    tilt1_rad = numpy.radians(tilt1)
+    azimuth1_rad = numpy.radians(azimuth1)
+    tilt2_rad = numpy.radians(tilt2)
+    azimuth2_rad = numpy.radians(azimuth2)
+
+    x1 = math.sin(tilt1_rad) * math.cos(azimuth1_rad)
+    y1 = math.sin(tilt1_rad) * math.sin(azimuth1_rad)
+    z1 = math.cos(tilt1_rad)
+
+    x2 = math.sin(tilt2_rad) * math.cos(azimuth2_rad)
+    y2 = math.sin(tilt2_rad) * math.sin(azimuth2_rad)
+    z2 = math.cos(tilt2_rad)
+
+
+    euclidean_distance = math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2 + (z1 - z2) ** 2)
+
+    center_angle = numpy.degrees(math.acos((2 - euclidean_distance ** 2) / 2))
+
+    return center_angle
+\end{lstlisting}
