@@ -16,7 +16,7 @@ def create_map():
     global crs_in_projections
     crs_in_projections = "EPSG:3067"
 
-    # loading background map from shapefile
+    # loading a background map from shapefile
     background_map = geopandas.read_file("pymapper/shapefiles/maakunnat_siistitty.shp")
 
     # Create cartopy GeoAxes with proper projection
@@ -64,14 +64,14 @@ def limit_map_to_region(top=61, bottom=59.9, left=23.5, right=26.5):
     p1 = Point(bottom, left)
     p2 = Point(top, right)
 
-    # projection, this is used to transform the points to correct coordinate system
+    # projection, this is used to transform the points to the correct coordinate system
     projection = partial(
         pyproj.transform,
         pyproj.Proj("EPSG:4326"),
         pyproj.Proj("EPSG:3067")
     )
 
-    # points in correct coord system
+    # points in the correct coord system
     p1a = transform(projection, p1)
     p2a = transform(projection, p2)
     top = p2a.y

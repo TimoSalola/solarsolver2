@@ -21,7 +21,7 @@ def find_smooth_days_xa(year_xa, day_start, day_end, threshold_percent):
 
     #print(year_xa)
     results = __find_smooth_days(year_xa, day_start, day_end, threshold_percent)
-    print("Found " + len(results[0]) + " smooth days")
+    print("Found " + str(len(results[0])) + " smooth days")
     return results[0]
 
 

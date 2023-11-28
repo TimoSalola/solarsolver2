@@ -8,7 +8,7 @@ import splitters
 ###############################################################
 #   Latitude estimation functions
 #   The functions here perform well for FMI helsinki dataset and less so for Kuopio dataset.
-#   Accuracy for these datasets is somewhere in the 5 to 15 degree range due to pvlib poa simulation not being ideal
+#   Accuracy for these datasets is somewhere in the 5 to 15-degree range due to pvlib poa simulation not being ideal
 #   for latitude predictions
 ###############################################################
 
@@ -19,13 +19,13 @@ def slopematch_estimate_latitude_using_single_year(xa, year, first_day, last_day
     :param year: year, eq. 2021
     :param first_day: first day of analysis interval, use 125 if
     :param last_day: last day of analysis interval, use 250
-    :return: [first minute based latitude estimation, last minute based latitude est]
+    :return: [first minute-based latitude estimation, last minute-based latitude est]
     """
 
     # taking a slice from given measurements xa
     year_data = splitters.slice_xa(xa, year, year, first_day, last_day)
 
-    # creating a set of poa based 3rd degree polynomials, input is slope angle, output is latitude
+    # creating a set of poa-based 3rd degree polynomials, input is slope angle, output is latitude
     # this is slow-ish to compute
     model_first_mins, model_last_mins = __get_poa_slope_models_for_day_ranges(year, first_day, last_day, 55, 75)
 
@@ -136,14 +136,14 @@ def __minute_list_to_first_last(minutelist):
 
     ##############################
     # FUNCTION STEPS
-    # 1. CALCULATE LENGTH OF GIVEN LIST
+    # 1. CALCULATE THE LENGTH OF GIVEN LIST
     # 2. REJECT IF LEN IS BAD
     # 3. RETURN FIRST AND LAST MINUTES IF THEY ARE OBVIOUS
     # 4. EXAMINE DIFFICULT CASES ON CASE BY CASE BASIS AND RETURN HARDER CASES
     # 5. RETURN NONE, NONE IF NONE OF THE CASES APPLIED
     ##############################
 
-    # 1. CALCULATE LENGTH OF GIVEN LIST
+    # 1. CALCULATE THE LENGTH OF THE GIVEN LIST
     minutelist_len = len(minutelist)
 
     # 2. REJECT IF LEN IS BAD

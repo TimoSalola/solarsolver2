@@ -26,7 +26,7 @@ CORE_RANGE = 15  # ray range from equinox that can be considered good
 
 #
 DEFAULT_TILT = 30
-DEFAULT_FACING =180
+DEFAULT_FACING = 180
 DEFAULT_LONG = 28  #28
 DEFAULT_LAT = 70 #60
 

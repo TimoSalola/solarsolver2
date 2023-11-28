@@ -58,7 +58,7 @@ def create_geodf_from_addresses(addresses):
     # dataframe is then transformed into geopandas dataframe
     gdf = geopandas.GeoDataFrame(
         df, geometry=geopandas.points_from_xy(df.Longitude, df.Latitude), crs="EPSG:4326"  # this sets the datapoints
-        # into the "wrong" coordiante system and projection. This is required as coordinates are given as WGS but
+        # into the "wrong" coordinate system and projection. This is required as coordinates are given as WGS but
         # they have to be later projected into Finnish cylindrical system
     )
 

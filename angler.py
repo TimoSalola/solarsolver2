@@ -172,9 +172,44 @@ def test_n_fibonacchi_sample_fitnesses_against_day(day_xa, samples, latitude, lo
 
 
 
-def angle_intelligenlty_safe_one_day(day_of_measurements, latitude, longitude, start_point_count):
+def angle_intelligently_safe_multi_day(days_of_measurements, latitude, longitude, start_point_count):
 
-    print("Starting intelligent best fit search with " +str(start_point_count) +  " start points.")
+    """
+    Takes a list of good days, known geolocation and starting point count. Will intelligently solve best fit for each
+    day in days_of_measurements with given starting point count.
+    :param days_of_measurements:
+    :param latitude: installation latitude
+    :param longitude: installation longitude
+    :param start_point_count: How many different starting points in angle space are used.
+    :return:
+    """
+
+
+    best_tilts = []
+    best_azimuths = []
+    best_fitnesses = []
+
+    for day in days_of_measurements:
+        day_tilt, day_azimuth, day_fitness = angle_intelligenlty_safe_one_day(day, latitude, longitude, start_point_count, verbose=False)
+        best_tilts.append(day_tilt)
+        best_azimuths.append(day_azimuth)
+        best_fitnesses.append(day_fitness)
+
+
+    print("best tilts were:")
+    print(best_tilts)
+    print("best azimuths were:")
+    print(best_azimuths)
+    print("best fitnessess:")
+    print(best_fitnesses)
+
+    return  best_tilts, best_azimuths
+
+
+def angle_intelligenlty_safe_one_day(day_of_measurements, latitude, longitude, start_point_count, verbose=True):
+
+    if verbose:
+        print("Starting intelligent best fit search with " +str(start_point_count) +  " start points.")
 
     tilts = []
     azimuths = []
@@ -185,8 +220,9 @@ def angle_intelligenlty_safe_one_day(day_of_measurements, latitude, longitude, s
     f_tilts = numpy.degrees(f_tilts).astype(int)
     f_azimuths= numpy.degrees(f_azimuths).astype(int)
 
-    print("Tilts to test: " + str(f_tilts))
-    print("Azimuths: " + str(f_azimuths))
+    if verbose:
+        print("Tilts to test: " + str(f_tilts))
+        print("Azimuths: " + str(f_azimuths))
 
     # testing where each lattice coordinate converges to
     for i in range(len(f_tilts)):
@@ -203,9 +239,12 @@ def angle_intelligenlty_safe_one_day(day_of_measurements, latitude, longitude, s
     # solving best angles
     best_tilt, best_azimuth, best_fitness = get_best_fitness_out_of_results(tilts, azimuths, fitnessess)
 
-    print(best_tilt)
-    print(best_azimuth)
-    print(best_fitness)
+    if verbose:
+        print(best_tilt)
+        print(best_azimuth)
+        print(best_fitness)
+
+    return best_tilt, best_azimuth, best_fitness
 
 
 

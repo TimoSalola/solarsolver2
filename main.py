@@ -16,6 +16,7 @@ import matplotlib
 import matplotlib.pyplot
 import config
 import time
+
 matplotlib.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
 matplotlib.rc('text', usetex=True)
 
@@ -32,6 +33,7 @@ def test_data_loading():  # works
 def test_preprocessing_v2():
     data = solar_power_data_loader.get_fmi_helsinki_data_as_xarray()
     solar_power_data_loader.print_last_loaded_data_visual()
+
 
 ####################################
 # Tests for data plotting
@@ -118,60 +120,53 @@ def plot_clear_day():
 
     matplotlib.pyplot.show()
 
+
 def plot_year_of_data():
     data = solar_power_data_loader.get_fmi_kuopio_data_as_xarray()
 
     year_n = 2020
 
-
-
     days = []
     minutes = []
     powers = []
 
-
     for d in range(190, 300):
         d_data = splitters.slice_xa(data, year_n, year_n, d, d)
         d_data = d_data.dropna(dim="minute")
-        d_powers = d_data["power"].values[0][0]  # using[0][0] because the default output is [[[1,2,3,...]]] Might be due to how
+        d_powers = d_data["power"].values[0][
+            0]  # using[0][0] because the default output is [[[1,2,3,...]]] Might be due to how
         # xarray handles data variables with multiple coordinates
         d_minutes = d_data["minute"].values
         d_n_day = d_data["day"].values
-        #print("########")
-        #print(len(powers))
-        #print(len(minutes))
+        # print("########")
+        # print(len(powers))
+        # print(len(minutes))
 
         day_ns = [d_n_day[0] for i in range(len(d_powers))]
-
 
         days.extend(day_ns)
         minutes.extend(d_minutes)
         powers.extend(d_powers)
 
-
     print("DAYS")
-    #print(days)
+    # print(days)
     print(len(days))
     print("MINUTES")
-    #print(minutes)
+    # print(minutes)
     print(len(minutes))
     print("POWERS")
-    #print(powers)
+    # print(powers)
     print(len(powers))
-
 
     fig = matplotlib.pyplot.figure(figsize=(12, 12))
     ax = fig.add_subplot(projection='3d')
-
 
     # plotting day and significant minutes
     ax.scatter(minutes, powers, days, s=[0.2] * len(minutes), c="black")
     matplotlib.pyplot.show()
 
-    #matplotlib.pyplot.scatter([minutes[0]], [powers[0]], s=[30], c=config.ORANGE)
-    #matplotlib.pyplot.scatter(minutes[len(minutes) - 1], powers[len(minutes) - 1], s=[30], c=config.PURPLE)
-
-
+    # matplotlib.pyplot.scatter([minutes[0]], [powers[0]], s=[30], c=config.ORANGE)
+    # matplotlib.pyplot.scatter(minutes[len(minutes) - 1], powers[len(minutes) - 1], s=[30], c=config.PURPLE)
 
 
 ####################################
@@ -206,7 +201,6 @@ def estimate_longitude_v2():  # works, used in thesis
         print("year: " + str(year_n) + " estimated longitude: " + str(estimated_longitude))
 
 
-
 def estimate_latitude():  # works,  used in thesis
     ###############################################################
     #   This function contains an example on latitude estimation.
@@ -215,7 +209,8 @@ def estimate_latitude():  # works,  used in thesis
     data = solar_power_data_loader.get_fmi_helsinki_data_as_xarray()
 
     for year_n in range(2017, 2022):
-        estimated_latitude = geoguesser_latitude.slopematch_estimate_latitude_using_single_year(data, year_n, 190, 280) # was 190-250
+        estimated_latitude = geoguesser_latitude.slopematch_estimate_latitude_using_single_year(data, year_n, 190,
+                                                                                                280)  # was 190-250
         print(
             "year " + str(year_n) + " lat 1: " + str(estimated_latitude[0]) + ", lat 2: " + str(estimated_latitude[1]))
 
@@ -322,13 +317,11 @@ def plot_multi_segment_partly_cloudy():
 
 
 def plot_multi_year_geolocations_on_map():
-
     # Estimates geolocations for installation per year and plots them with pymapper
 
+    # data = solar_power_data_loader.get_fmi_helsinki_data_as_xarray()
 
-    #data = solar_power_data_loader.get_fmi_helsinki_data_as_xarray()
-
-    #change site here, map and data loading will be adjusted accordingly
+    # change site here, map and data loading will be adjusted accordingly
     site = "Kuopio"
 
     data = ""
@@ -343,26 +336,25 @@ def plot_multi_year_geolocations_on_map():
         correct_lat = config.HELSINKI_KUMPULA_LATITUDE
         correct_long = config.HELSINKI_KUMPULA_LONGITUDE
 
-
     pymapper.mapper.toggle_grid(True)
     pymapper.mapper.create_map()
 
     # estimating every year
     for year_n in range(2017, 2022):
-
         fday = 190
         lday = 280
-        #estimating longitude
+        # estimating longitude
         year_data = splitters.slice_xa(data, year_n, year_n, fday, lday)
         estimated_longitude = geoguesser_longitude.estimate_longitude_based_on_year(year_data)
-        #print("year: " + str(year_n) + " estimated longitude: " + str(estimated_longitude))
+        # print("year: " + str(year_n) + " estimated longitude: " + str(estimated_longitude))
 
         # estimating latitude
-        estimated_latitude = geoguesser_latitude.slopematch_estimate_latitude_using_single_year(data, year_n, fday, lday)
-        #print( "year " + str(year_n) + " lat 1: " + str(estimated_latitude[0]) + ", lat 2: " + str(estimated_latitude[1]))
+        estimated_latitude = geoguesser_latitude.slopematch_estimate_latitude_using_single_year(data, year_n, fday,
+                                                                                                lday)
+        # print( "year " + str(year_n) + " lat 1: " + str(estimated_latitude[0]) + ", lat 2: " + str(estimated_latitude[1]))
 
-        #taking the average of two estimated latitude values
-        estimated_latitude_n = (estimated_latitude[0]+estimated_latitude[1])/2
+        # taking the average of two estimated latitude values
+        estimated_latitude_n = (estimated_latitude[0] + estimated_latitude[1]) / 2
 
         print("year " + str(year_n) + " predicted average: " + str(estimated_latitude_n))
 
@@ -375,15 +367,11 @@ def plot_multi_year_geolocations_on_map():
     elif site == "Kuopio":
         pymapper.mapper.limit_map_to_region(63.75, 60.2, 24, 31)
 
-
-
     pymapper.mapper.plot_point(correct_lat, correct_long, color="purple")
 
     pymapper.mapper.add_text_to_map("FMI " + site, correct_lat, correct_long)
 
     pymapper.mapper.show_map()
-
-
 
 
 def test_cloud_free_day_finder_visual():
@@ -396,6 +384,7 @@ def test_cloud_free_day_finder_visual():
     year_data = splitters.slice_xa(data, year_n, year_n, 10, 350)
 
     cloud_free_day_finder.cloud_free_day_finder_visual(year_data, 130, 200, 1)
+
 
 def test_one_panel_angle():
     ###############################################################
@@ -425,7 +414,7 @@ def test_one_panel_angle():
     print("computing panel angle fitness")
 
     fitness = angler.test_single_pair_of_angles(day, config.HELSINKI_KUMPULA_LATITUDE,
-                                                  config.HELSINKI_KUMPULA_LONGITUDE, panel_tilt, panel_azimuth)
+                                                config.HELSINKI_KUMPULA_LONGITUDE, panel_tilt, panel_azimuth)
 
     print("fitness:")
     print(fitness)
@@ -475,7 +464,7 @@ def test_grid_of_panel_angles():
     for tilt in range(0, 90, 20):
         for facing in range(0, 360, 20):
             fitness = angler.test_single_pair_of_angles(day, config.HELSINKI_KUMPULA_LATITUDE,
-                                                          config.HELSINKI_KUMPULA_LONGITUDE, tilt, facing)
+                                                        config.HELSINKI_KUMPULA_LONGITUDE, tilt, facing)
 
             tilts.append(tilt)
             facings.append(facing)
@@ -497,8 +486,6 @@ def test_fibonacci_grid_of_panel_angles():
     latitude = config.HELSINKI_KUMPULA_LATITUDE
     longitude = config.HELSINKI_KUMPULA_LONGITUDE
 
-
-
     # selecting year
     year_n = 2018
 
@@ -514,7 +501,8 @@ def test_fibonacci_grid_of_panel_angles():
     print(day_n)
 
     # tilt, azimuth and their fitness
-    tilts_rad, azimuths_rad, fits = angler.test_n_fibonacchi_sample_fitnesses_against_day(day, 1000, latitude, longitude)
+    tilts_rad, azimuths_rad, fits = angler.test_n_fibonacchi_sample_fitnesses_against_day(day, 1000, latitude,
+                                                                                          longitude)
     tilts_deg = numpy.degrees(tilts_rad)
     azimuths_deg = numpy.degrees(azimuths_rad)
 
@@ -531,12 +519,9 @@ def test_fibonacci_grid_of_panel_angles():
             best_tilt_deg = tilt
             best_azimuth_deg = azimuth
 
-
     print("Estimation error calculation ##############")
     angler.angular_distance_between_points(expected_tilt, expected_azimuth, best_tilt_deg, best_azimuth_deg)
     print("###########################################")
-
-
 
     # block for printing out angles in latex table format
     """
@@ -554,27 +539,26 @@ def test_fibonacci_grid_of_panel_angles():
     # plotting map, this solves best fit internally so no need to pass it on
     polarplotter.plot_polar_scattermap(tilts_deg, azimuths_deg, fits, use_cmap=True)
 
-
     # finally plotting curves to compare
     powers = day["power"].values[0][0]
     minutes = day["minute"].values
 
     matplotlib.pyplot.plot(minutes, powers, c="black", label="Measurements")
 
-    #poa
+    # poa
     best_poa = pvlib_poa.get_irradiance(year_n, day_n, config.HELSINKI_KUMPULA_LATITUDE,
                                         config.HELSINKI_KUMPULA_LONGITUDE, best_tilt_deg, best_azimuth_deg)
     multiplier = multiplier_matcher.get_estimated_multiplier_for_day(day, best_poa)
-    matplotlib.pyplot.plot(best_poa.minute.values, best_poa.POA.values*multiplier, color=config.ORANGE, label="Best found fit")
+    matplotlib.pyplot.plot(best_poa.minute.values, best_poa.POA.values * multiplier, color=config.ORANGE,
+                           label="Best found fit")
 
-    #poa normal
+    # poa normal
     best_poa = pvlib_poa.get_irradiance(year_n, day_n, config.HELSINKI_KUMPULA_LATITUDE,
                                         config.HELSINKI_KUMPULA_LONGITUDE, expected_tilt,
                                         expected_azimuth)  # 15 135 helsinki, 15 217 kuopio
     multiplier = multiplier_matcher.get_estimated_multiplier_for_day(day, best_poa)
     matplotlib.pyplot.plot(best_poa.minute.values, best_poa.POA.values * multiplier, color=config.PURPLE,
                            label="Simulated values with known parameters")
-
 
     matplotlib.pyplot.legend()
 
@@ -599,11 +583,10 @@ def test_fibonacci_grid_of_panel_angles_multiday(samples):
     # creating list for clear days
     clear_days = []
 
-
     first_year = 2016
     last_year = 2020
     # looping through years and adding clear days to list
-    for year_nl in range(first_year, last_year+1):
+    for year_nl in range(first_year, last_year + 1):
         print("taking days from year " + str(year_nl))
         year_data = splitters.slice_xa(data, year_nl, year_nl, 10, 350)
         cloud_frees = cloud_free_day_finder.find_smooth_days_xa(year_data, 140, 220, 0.5)
@@ -629,7 +612,8 @@ def test_fibonacci_grid_of_panel_angles_multiday(samples):
                                                                                               latitude,
                                                                                               longitude)
         # solving for best fit out of all points
-        best_tilt, best_azimuth, best_fit = polarplotter.__get_best_fitness_out_of_results(tilts_rad, azimuths_rad, fits)
+        best_tilt, best_azimuth, best_fit = polarplotter.__get_best_fitness_out_of_results(tilts_rad, azimuths_rad,
+                                                                                           fits)
 
         # adding best fit to best fit lists
         best_tilts.append(best_tilt)
@@ -657,21 +641,28 @@ def test_fibonacci_grid_of_panel_angles_multiday(samples):
 
         delta_degrees = angler.angular_distance_between_points(expected_tilt, expected_azimuth, tilt_deg, azimuth_deg)
 
-        print("day " + str(day) + " predicted " + str(round(tilt_deg,2)) + " " + str(round(azimuth_deg,2)) + " delta degrees: " + str(round(delta_degrees,2)))
+        print("day " + str(day) + " predicted " + str(round(tilt_deg, 2)) + " " + str(
+            round(azimuth_deg, 2)) + " delta degrees: " + str(round(delta_degrees, 2)))
 
+    polarplotter.plot_polar_scattermap_points_with_texts(numpy.degrees(best_tilts), numpy.degrees(best_azimuths),
+                                                         day_ns)
 
-    polarplotter.plot_polar_scattermap_points_with_texts(numpy.degrees(best_tilts), numpy.degrees(best_azimuths), day_ns)
 
 def test_localized_lattice():
     angler.get_fibonacci_distribution_tilts_azimuths_near_coordinate(15, 135, 10000, 0.2)
 
 
-
 def intelligent_angling_test():
+
+    """
     data = solar_power_data_loader.get_fmi_kuopio_data_as_xarray()
     latitude = config.KUOPIO_FMI_LATITUDE
     longitude = config.KUOPIO_FMI_LONGITUDE
+    """
 
+    data = solar_power_data_loader.get_fmi_helsinki_data_as_xarray()
+    latitude = config.HELSINKI_KUMPULA_LATITUDE
+    longitude = config.HELSINKI_KUMPULA_LONGITUDE
     # selecting year
     year_n = 2018
 
@@ -682,24 +673,52 @@ def intelligent_angling_test():
     clear_days = cloud_free_day_finder.find_smooth_days_xa(year_data, 70, 250, 0.5)
 
     # day xa
+    """
     day = clear_days[4]
     day_n = day["day"].values[0]
     print(day_n)
     angler.angle_intelligenlty_safe_one_day(day, latitude, longitude, 4)
-    #angler.angle_intelligently_safe_for_one_day(day, latitude, longitude)
+    # angler.angle_intelligently_safe_for_one_day(day, latitude, longitude)
+    """
 
-#test_cloud_free_day_finder_visual()
+    tilts, azimuths = angler.angle_intelligently_safe_multi_day(clear_days, latitude, longitude, 4)
 
-#test_cloud_free_day_finder_visual()
-#intelligent_angling_test()
 
-#test_one_panel_angle()
-#test_fibonacci_grid_of_panel_angles()
-#test_localized_lattice()
+
+    # selectig one clear day from clear days list to plot as a comparison
+    clear_day = clear_days[1]
+    powers = clear_day["power"].values[0][0]
+    minutes = clear_day["minute"].values
+    day_n = clear_day["day"].values[0]
+
+    matplotlib.pyplot.scatter(minutes, powers, s=[0.2] * len(minutes), c="black")
+
+    #
+    best_tilt = tilts[0]
+    best_azimuth = azimuths[0]
+    best_poa = pvlib_poa.get_irradiance(year_n, day_n, config.HELSINKI_KUMPULA_LATITUDE,
+                                        config.HELSINKI_KUMPULA_LONGITUDE, best_tilt, best_azimuth)
+    multiplier = multiplier_matcher.get_estimated_multiplier_for_day(clear_day, best_poa)
+
+    matplotlib.pyplot.scatter(best_poa.minute.values, best_poa.POA.values * multiplier, s=0.2, c=config.ORANGE)
+
+    matplotlib.pyplot.show()
+
+
+
+
+# test_cloud_free_day_finder_visual()
+
+# test_cloud_free_day_finder_visual()
+intelligent_angling_test()
+
+# test_one_panel_angle()
+# test_fibonacci_grid_of_panel_angles()
+# test_localized_lattice()
 
 # plot_multi_year_geolocations_on_map()
-#estimate_latitude()
+# estimate_latitude()
 
-test_preprocessing_v2()
-#plot_year_of_data()
-#test_fibonacci_grid_of_panel_angles_multiday(10000)
+# test_preprocessing_v2()
+# plot_year_of_data()
+# test_fibonacci_grid_of_panel_angles_multiday(10000)

@@ -1,8 +1,8 @@
 def coordinate_to_gmaps_link(latitude, longitude):
     '''
-    :param latitude: Latitude in degrees, 64.3242 for example
-    :param longitude: Longitude in degrees, 24.231 for example
-    :return: Google maps link to that coordinate location
+    :param latitude: Latitude in degrees, 64.3242, for example.
+    :param longitude: Longitude in degrees, 24.231, for example.
+    :return: Google Maps link to that coordinate location
     '''
 
     # sample link
