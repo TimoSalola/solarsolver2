@@ -231,7 +231,7 @@ After acceptable days are chosen with the classification algorithm, the next ste
 
 \section{Clear day detection algorithm}
 \label{clearskyalgo_chapter}
-While the previous preprocessing steps have filtered and repaired days according to measurement counts and data gaps, these algorithms did not take other factors into account. If the interference in measurements caused by clouds or other sources is significant, the value of a day for model fitting is reduced. An example of strong interference can be seen in figure \ref{fig_cloudfree_vs_cloudy}. Detecting the presence of such interference with an algorithm would help with automating the process of model fitting as that would eliminate the need to manually select good days from datasets. The following is an explanation of how the cloud free day detection was accomplished in this thesis.
+While the previous preprocessing steps have filtered and repaired days according to measurement counts and data gaps, these algorithms did not take the quality of measurements into account. If the interference in measurements caused by clouds or other sources is significant, the value of a day for model fitting is reduced. An example of strong interference can be seen in figure \ref{fig_cloudfree_vs_cloudy}. Detecting the presence of such interference with an algorithm would help with automating the process of model fitting as that would eliminate the need to manually select good days from datasets. The following is an explanation of how the cloud free day detection was accomplished in this thesis.
 
 
 
@@ -263,9 +263,11 @@ While the previous preprocessing steps have filtered and repaired days according
 
 \noindent The mathematically non-trivial parts here are the threshold selection, difference measurement and low pass filtering. Low pass filtering is a term borrowed from the field of signal processing and it refers to any algorithm which removes frequencies higher than a given limit from a signal, allowing lower frequencies to pass. 
 
-The mathematical equivalent of this process can be defined in multiple ways. In the code used for this thesis the filtering is done with the help of discrete Fourier transformations. Discrete Fourier transformation transforms a given list of numbers to a set of sine and cosine equations which approximate the given input. This trigonometric approximation can be reversed in order to return the continuous trigonometric approximation back into discrete values. As the output of a discrete fourier transformation is ordered from lowest frequency to highest, by either calculating only the first n terms or calculating all terms and zeroing out every value after term n, we can eliminate high frequencies from the continuous represenation. After this modified representation is reversed, the resulting discrete datapoints can now be said to be low pass filtered. An example of what this looks in practice is shown in figure \ref{fig_cloudfree_algo} where the 6 longest frequencies were used for approximating the discrete datapoints. 
 
-Note that while this process is somewhat complicated, the use of fourier series is not necessary. Similar results can also be achieved by locally averaging each power value to be the average of nearest k values. Discrete Fourier transformation based methods do however have an advantage, their universality. If the 6 or 7 or n longest frequencies can be determined to be a good low pass filter, then these same frequencies should result in similar outputs no matter the temporal resolution of the power measurement data. Where as a method based on local averages would require more tuning.
+
+Here the filtering is done with the help of discrete Fourier transformations and inverse discrete Fourier transformations. Discrete Fourier transformation transforms a given list of numbers to a set of sine and cosine equations which approximate the given input, this trigonometric approximation can then be reversed in order to return the continuous trigonometric approximation back into the original discrete values. As the output of a discrete fourier transformation is ordered, by modifying the output of the transformation, frequencies can be selectively removed or amplified. By zeroing out all but the n longest frequencies, we can generate a smooth continuous approximation of the given input. By then reversing the modified continuous approximation back into a list of discrete values using inverse discrete Fourier transformation, we have a way of filtering high frequencies from a list of numbers. An example of what this looks in practice is shown in figure \ref{fig_cloudfree_algo} where the 6 longest frequencies were used for approximating the discrete datapoints. 
+
+Note that while this process is somewhat complicated, Fourier transformations are not the only tool for creating low pass filters. Similar results can also be achieved by locally averaging each power value to be the average of nearest k values. Discrete Fourier transformation based methods do however have an advantage in their universality. If the 6 or 7 or n longest frequencies can be determined to be a good low pass filter, then these same frequencies should result in similar outputs no matter the temporal resolution of the power measurement data. Where as a method based on local averages would require more tuning.
 
 The second component is not as complicated. Measuring the delta between a filtered and unfiltered set of measurements can be done by computing the discrete curve length or as was done here, measuring the absolute average deviation between filtered and unfiltered power measurement. This is shown with the following equations 2.1-2.4.
 
@@ -279,12 +281,32 @@ delta_{norm} &= delta_{avg}/ max(Power)
 \end{align}
 
 
-The last component is threshold selection. By choosing to reject every day for which the $delta_{norm}$ value is higher than 0.05, we can eliminate days where measurements deviate on average more than 5\% from the low pass filtered measured power values. With the Helsinki and Kuopio datasets, values as low as 0.5\% still provided some outputs. As the method is based on calculating the delta from a smooth approximation, percentual delta values are unlikely to approach zero unless the modeled data itself is faulty. Depending on the data quality, higher threshold values may need to be used. For example, if the panels are shaded by a tree or some other obstruction during a short period each day, then base level of noise in the measurements would be higher than it is for the FMI datasets.
+The last component is threshold selection. By choosing to reject every day for which the $delta_{norm}$ value is higher than 0.05, we can eliminate days where measurements deviate on average more than 5\% from the low pass filtered measured power values. With the Helsinki and Kuopio datasets threshold values as low as 0.5\% still provided some outputs. This is unlikely to hold for other datasets as differences in temporal resolution and installation specific shading patterns are likely to change the noise patterns in data. 
 
 
-The algorithm has weaknessess. It is designed to seek the very smoothest of days, resulting in a large amount of false negatives. In addition, other forms of interefence such as snow on panels, reflective surfaces near solar panels and clouds which do not block direct sunlight may distract the algorithm. From a human perspective the results of the algorithm may thus be unintuitive as a snowy day may be classified as cloudy even though the interference source was snow on the panels and not the cloud cover. But from the perspective of the processing algorithms, the source of noise in the data is irrelevant.
+%The thresholds between datasets are not directly comparable. Installation specific shading patterns may increase the base level of noise present in datasets and thus higher thresholds 
 
-Despite these differences
+
+
+%While the The algorithm has some weak points. 
+
+
+
+%As the method is based on calculating the delta from a smooth approximation, percentual delta values are unlikely to approach zero unless the modeled data itself is faulty. Depending on the data quality, higher threshold values may need to be used. For example, if the panels are shaded by a tree or some other obstruction during a short period each day, then base level of noise in the measurements would be higher than it is for the FMI datasets. 
+
+
+%This could be circumvented by 
+
+
+%As the algorithm is designed for finding the very smoothest of days, the algorithm generates large amounts of false negatives. When this is combined with the interference from sources other than clouds, 
+
+
+%, the high number of false negatives 
+
+
+%And as it is designed to seek the very smoothest of days, resulting in a large amount of false negatives. In addition, other forms of interefence such as snow on panels, reflective surfaces near solar panels and clouds which do not block direct sunlight may distract the algorithm. From a human perspective the results of the algorithm may thus be unintuitive as a snowy day may be classified as cloudy even though the interference source was snow on the panels and not the cloud cover. But from the perspective of the processing algorithms, the source of noise in the data is irrelevant.
+
+%Despite these differences
 
 
 %The terms used in signal processing have mathematical counterparts with some distinctions, for example we can use mathematical structures such as lists, matrices or graphs as signals. And the mathematical near equivalent of high and low frequencies could be defined with the help of delta values between neighboring numerical values in these structures. If the delta values between any two near by values is significant, then this section of the mathematical structure contains high frequency change. Similarly if delta values between any two distant values are high, this is indicative of low frequency change between these two points.
@@ -397,10 +419,18 @@ Despite these differences
 %\section{Third party datasets}
 %Sunny portal etc here
 
-\section{Assumptions and possible issues}
-If metadata such as the geographic location or panel installation angles is missing from the datafiles, it is very likely that other critical pieces of information could be left out as well. Were additional modules were installed during operation? Could some panels be installed at different angles? What if the panels are installed in tracking mounts and thus the panel angles vary during each day? These questions are left unaswered and thus some assumptions have to be made. In this thesis we will assume that the panels are installed on fixed mounts, no changes were done during data gathering period and all panels are oriented similarly. We will also assume that there are no major obstacles casting shadows on the panels and that the panels are not self-shadowing, meaning that the panels are not casting shadows on one another.
+%\section{Required assumptions}The algorithms presented in this thesis work on datasets which 
 
-Another source of uncertainty is data collection itself. The device responsible for measuring power output values and logging the values has to have a clock for measuring time, but this clock could have be running too slow or fast, resulting in a drifting error in the timestamps. Similarly if the system clock is running at the right speed but it is off by a minute or two, this could cause a bias in the data which would be hard to detect. There is also the question of how measurement timing is done. If the time resolution of the logging device is 15 minutes, is the power value at 12:45 taken during the 45th minute or is the power value the average of the previous 15 minutes as is often done in meteorology? Or could the power value be the average of measurements taken during the interval 12:38 to 12:52? In meoteorology, the last period average would be the standard, but standards may not always be followed.
+
+%Due to the diversity of possible solar PV installations, creating an universal model for parameter estimation is not fesiable. Installations could have been modified during operation, system failures could induce different types of changes in measurement data and 
+
+
+
+
+%\section{Assumptions and possible issues}
+%If metadata such as the geographic location or panel installation angles is missing from the datafiles, it is very likely that other critical pieces of information could be left out as well. Were additional modules were installed during operation? Could some panels be installed at different angles? What if the panels are installed in tracking mounts and thus the panel angles vary during each day? These questions are left unaswered and thus some assumptions have to be made. In this thesis we will assume that the panels are installed on fixed mounts, no changes were done during data gathering period and all panels are oriented similarly. We will also assume that there are no major obstacles casting shadows on the panels and that the panels are not self-shadowing, meaning that the panels are not casting shadows on one another.
+
+%Another source of uncertainty is data collection itself. The device responsible for measuring power output values and logging the values has to have a clock for measuring time, but this clock could have be running too slow or fast, resulting in a drifting error in the timestamps. Similarly if the system clock is running at the right speed but it is off by a minute or two, this could cause a bias in the data which would be hard to detect. There is also the question of how measurement timing is done. If the time resolution of the logging device is 15 minutes, is the power value at 12:45 taken during the 45th minute or is the power value the average of the previous 15 minutes as is often done in meteorology? Or could the power value be the average of measurements taken during the interval 12:38 to 12:52? In meoteorology, the last period average would be the standard, but standards may not always be followed.
 
 %is the standard, but standards are not always followed and thus 
 
