@@ -35,6 +35,72 @@ def test_preprocessing_v2():
     solar_power_data_loader.print_last_loaded_data_visual()
 
 
+def poa_evaluation_plots():
+
+    # common parameters:
+    year_n = 2018
+    day_n = None # this will be updated from cloud free day finder
+    tilt = 15
+    azimuth = 135
+    latitude = config.HELSINKI_KUMPULA_LATITUDE
+    longitude = config.HELSINKI_KUMPULA_LONGITUDE
+
+
+
+
+    #### Loading single day from FMI helsinki dataset for comparison
+    data = solar_power_data_loader.get_fmi_helsinki_data_as_xarray()
+    # taking year from data
+    year_data = splitters.slice_xa(data, year_n, year_n, 10, 350)
+    # using a smoothness based method for detecting cloud free days
+    clear_days = cloud_free_day_finder.find_smooth_days_xa(year_data, 70, 250, 0.5)
+    # setting up plot
+    matplotlib.rcParams.update({'font.size': 18})
+    # day xa
+    day = clear_days[0]
+    # day number
+    day_n = day["day"].values[0]
+    # day with no nans
+    day = day.dropna(dim="minute")
+    # power values and minutes
+
+    powers_installation = day["power"].values[0][0]
+    minutes_installation = day["minute"].values
+
+
+    poa_installation = pvlib_poa.get_irradiance_with_multiplier(year_n, latitude, longitude,day_n, tilt, azimuth, 19)
+
+
+    minutes = poa_installation.minute.values
+    powers = poa_installation.POA.values
+
+
+
+    print(minutes)
+    print(powers)
+
+
+    fig, axs = matplotlib.pyplot.subplots(3, 2)
+    fig.tight_layout()
+    axs[0, 0].plot(minutes, powers)
+    axs[0, 0].plot(minutes_installation, powers_installation)
+    axs[0, 0].set_title("main")
+
+    matplotlib.pyplot.show()
+    
+
+    """
+    axs[1, 0].plot(x, y ** 2)
+    axs[1, 0].set_title("shares x with main")
+    axs[1, 0].sharex(axs[0, 0])
+    axs[0, 1].plot(x + 1, y + 1)
+    axs[0, 1].set_title("unrelated")
+    axs[1, 1].plot(x + 2, y + 2)
+    axs[1, 1].set_title("also unrelated")
+    
+    """
+
+
 ####################################
 # Tests for data plotting
 ####################################
@@ -653,7 +719,6 @@ def test_localized_lattice():
 
 
 def intelligent_angling_test():
-
     """
     data = solar_power_data_loader.get_fmi_kuopio_data_as_xarray()
     latitude = config.KUOPIO_FMI_LATITUDE
@@ -683,8 +748,6 @@ def intelligent_angling_test():
 
     tilts, azimuths = angler.angle_intelligently_safe_multi_day(clear_days, latitude, longitude, 4)
 
-
-
     # selectig one clear day from clear days list to plot as a comparison
     clear_day = clear_days[1]
     powers = clear_day["power"].values[0][0]
@@ -705,12 +768,12 @@ def intelligent_angling_test():
     matplotlib.pyplot.show()
 
 
-
-
-# test_cloud_free_day_finder_visual()
+poa_evaluation_plots()
 
 # test_cloud_free_day_finder_visual()
-intelligent_angling_test()
+
+# test_cloud_free_day_finder_visual()
+# intelligent_angling_test()
 
 # test_one_panel_angle()
 # test_fibonacci_grid_of_panel_angles()
