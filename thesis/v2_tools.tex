@@ -193,16 +193,16 @@ The same figure shows the importance of finding clear sky days as the only chara
 
 \begin{figure}[ht!]
 \centering
-\includegraphics[width=0.8\linewidth]{pics/parameter_deltas}
-\figcaption{POA irradiance simulations with different parameters. The control contains a curve modeled after FMI Helsinki \ref{table_fmi_helsinki_kuopio_parameters} PV installation and other graphs show how the POA curves change when POA parameters latitude, longitude, day, tilt or facing(azimuth) are adjusted. Adjustments were done in steps of 8 for latitude, longitude 15, day 25, tilt 15 and azimuth 60.}
+\includegraphics[width=0.8\linewidth]{pics/poa_eval_new_crop}
+\figcaption{Influence of changes in PVlib simulation parameters on generated power output curves. Control shows FMI Helsinki measurements and simulation with the same parameters as the Helsinki installation. Simulated power values are multiplied by 19 in order to match values on y-axis.}
 \label{fig_poa_different_parameters}
 \end{figure}
 
 \noindent In the best case scenario each of the simulation function inputs would affect one measureable property in the irradiance plots and their relationship would be bijective. To give an example, if the peak power minute was isolated from all other parameters than the longitude and the relationship between longitude and peak power minute was linear, it would be possible to solve the peak power minute to longitude function with just a few plane of array irradiance simulations.
 
-In the exact opposite case where every measureable property of irradiance plots is affected by every input parameter, solving the parameters would be much harder or even impossible due to limited computational resources. For example if all of the parameters influenced the same traits to different extents and the system was not bijective, multiple parameter combinations could result in the same simulated power graph. In a such system there would not be a single solution but rather a set of possible solutions.
+In the exact opposite case where every measureable property of irradiance plots is affected by every input parameter, solving the parameters would be much harder or even impossible. For example if all of the parameters influenced the same traits to different extents and the system was not bijective, multiple parameter combinations could result in the same simulated power graph. In a such system there would not be a single solution but rather a set of possible solutions.
 
-The problem of solving installation parameters lies somewhere in between the two extremes. The longitude parameter would seem to shift the curve along the time axis where as tilt and facing(azimuth) parameters do not affect the first or last non-zero minutes but they do affect the shape of the curve. Observations of parameter to trait interactions are listed on table \ref{table_traits}.
+The problem of solving installation parameters lies somewhere in between the two extremes. The longitude parameter would seem to shift the curve along the time axis where as tilt and azimuth parameters do not affect the first or last non-zero minutes but they do affect the shape of the curve. Observations of parameter to trait interactions are listed on table \ref{table_traits}.
 
 
 
@@ -292,12 +292,26 @@ The problem of solving installation parameters lies somewhere in between the two
 \noindent The latitude simulations show that the day length stays fairly consistent for locations close to the equator, but with latitudes of $50^\circ$ and higher, the day to day variation is significant. These POA simulations would imply that the region around equinoxes to be ideal for day length based analysis as there day length is always well defined and the rate of change can be measured. 
 
 
+\newpage
 
-%Similar results could be expected for the southern hemisphere. 
+\section{Increasing accuracy of solar PV simulations}
+\label{section_increased_accuracy_simulations}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.7\linewidth]{pics/poa_eval_single_day}
+\figcaption{Figure displaying deviations between simulated values and measured values.}
+\label{fig-poa_eval_single_day}
+\end{figure}
+
+\noindent Figure \ref{fig-poa_eval_single_day} show that simulations are fairly accurate but there seems to be some deviations between the simulated values and the measurements. The two significant deviations are the noise during peak power generation period and the smooth decrease in power generation during the last hours of the day. The peak power generation noise is likely to be caused by decreases in efficiency due to heat the occasional cooling from gusts of wind. The second deviation between the model and actual measurements is likely to be caused by panel reflections as the south-east orientation of the solar panels results in a high angle of incidence during the last hours of the day.
+
+Modeling these physical phenomena is possible to an extent if the components of plane of array irradiance are used instead of the POA values. As per Sandia National Laboratories \cite{sandia_poa}, the three components of plane of array irradiance are direct normal irradiance(DNI), global horizontal irradiance(GHI) and diffuse horizontal irradiance DHI. A physically accurate model would compute the absorbed radiation by first projecting the irradiance components to the plane of array adn the estimating the losses caused by reflections. After this is accomplished, the absorbed irradiance could be used to estimate panel temperature and power output.
 
 
 
-% Note that the range of good days is dependent on local weather conditions, geographic location and year to year variation. In the northern Finland it is likely to be shorter and it 
 
 
-%Thus this thesis proposes linear model fitting around the equinoxes as a method for latitude estimations at high latitudes. Equinoxes are especially suited for this as the rate of change in day lengths should close to its maximum. While the relationship between the rate of change and the latitude does not seem to be linear, the rate should be consistent and independent of the influence of other variables.
+
+
+

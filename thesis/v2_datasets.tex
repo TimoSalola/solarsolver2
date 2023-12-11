@@ -273,15 +273,15 @@ Here the filtering is done with the help of discrete Fourier transformations(DFT
 
 While this process is somewhat complicated, Fourier transformations are not the only tool for creating low pass filters. Similar results can also be achieved by locally averaging each power value to be the average of nearest $k$ values. Discrete Fourier transformation based methods do however have an advantage in their universality. If the 6 or 7 or $n$ longest frequencies can be determined to be a good low pass filter, then these same frequencies should result in similar outputs no matter the temporal resolution of the power measurement data. Where as a method based on local averages would require a different window size depending on measurement intervals.
 
-The second component is not as complicated as the low pass filtering operation. Measuring the delta between a filtered and unfiltered set of measurements can be done by computing the discrete curve length or as was done here, measuring the absolute average deviation between filtered and unfiltered power measurement. This is shown with the following equations 2.1-2.5.
+The second component is not as complicated as the low pass filtering operation. Measuring the delta between a filtered and unfiltered set of measurements can be done by computing the discrete curve length or as was done here, measuring the absolute average deviation between filtered and unfiltered power measurement. This is shown with the following equations \ref{eq2-1}-\ref{eq2-5}.
 
 
 \begin{align}
-Power &= [p_0, p_1, p_2, \dots , p_n] \\
+Power &= [p_0, p_1, p_2, \dots , p_n]   \label{eq2-1}\\ 
 Power_{filtered} &= [f_0, f_1, f_2, \dots , f_n] \\
 Power_{delta} &= [|p_0 - f_0|, |p_1-f_1|, |p_2-f_2|, \dots , |p_n-f_n|] \\
 delta_{avg} &= avg(Power_{delta}) \\
-delta_{norm} &= delta_{avg}/ max(Power)
+delta_{norm} &= delta_{avg}/ max(Power) \label{eq2-5}
 \end{align}
 
 

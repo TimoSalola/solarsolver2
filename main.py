@@ -35,18 +35,14 @@ def test_preprocessing_v2():
     solar_power_data_loader.print_last_loaded_data_visual()
 
 
-def poa_evaluation_plots():
 
-    # common parameters:
+def poa_evaluation_single_day():
     year_n = 2018
-    day_n = None # this will be updated from cloud free day finder
+    day_n = None  # this will be updated from cloud free day finder
     tilt = 15
     azimuth = 135
     latitude = config.HELSINKI_KUMPULA_LATITUDE
     longitude = config.HELSINKI_KUMPULA_LONGITUDE
-
-
-
 
     #### Loading single day from FMI helsinki dataset for comparison
     data = solar_power_data_loader.get_fmi_helsinki_data_as_xarray()
@@ -54,51 +50,156 @@ def poa_evaluation_plots():
     year_data = splitters.slice_xa(data, year_n, year_n, 10, 350)
     # using a smoothness based method for detecting cloud free days
     clear_days = cloud_free_day_finder.find_smooth_days_xa(year_data, 70, 250, 0.5)
-    # setting up plot
     matplotlib.rcParams.update({'font.size': 18})
-    # day xa
     day = clear_days[0]
-    # day number
     day_n = day["day"].values[0]
-    # day with no nans
     day = day.dropna(dim="minute")
-    # power values and minutes
 
+    ## data from loaded day
     powers_installation = day["power"].values[0][0]
     minutes_installation = day["minute"].values
 
+    ## poa simulation of single day
+    poa_installation = pvlib_poa.get_irradiance_with_multiplier(year_n, latitude, longitude, day_n, tilt, azimuth, 19)
+    minutes_simulated_installation = poa_installation.minute.values
+    powers_simulated_installation = poa_installation.POA.values
+    matplotlib.pyplot.plot(minutes_installation, powers_installation, c=config.ORANGE)
+    matplotlib.pyplot.plot(minutes_simulated_installation, powers_simulated_installation, c=config.PURPLE)
 
-    poa_installation = pvlib_poa.get_irradiance_with_multiplier(year_n, latitude, longitude,day_n, tilt, azimuth, 19)
+    matplotlib.pyplot.xlabel("Minute")
+    matplotlib.pyplot.ylabel("Power")
+    matplotlib.pyplot.title("Day " + str(day_n))
+    matplotlib.pyplot.show()
 
 
-    minutes = poa_installation.minute.values
-    powers = poa_installation.POA.values
 
 
 
-    print(minutes)
-    print(powers)
+
+def poa_evaluation_plots():
+    # common parameters:
+    year_n = 2018
+    day_n = None  # this will be updated from cloud free day finder
+    tilt = 15
+    azimuth = 135
+    latitude = config.HELSINKI_KUMPULA_LATITUDE
+    longitude = config.HELSINKI_KUMPULA_LONGITUDE
+
+    #### Loading single day from FMI helsinki dataset for comparison
+    data = solar_power_data_loader.get_fmi_helsinki_data_as_xarray()
+    # taking year from data
+    year_data = splitters.slice_xa(data, year_n, year_n, 10, 350)
+    # using a smoothness based method for detecting cloud free days
+    clear_days = cloud_free_day_finder.find_smooth_days_xa(year_data, 70, 250, 0.5)
+    matplotlib.rcParams.update({'font.size': 18})
+    day = clear_days[0]
+    day_n = day["day"].values[0]
+    day = day.dropna(dim="minute")
+
+    ## data from loaded day
+    powers_installation = day["power"].values[0][0]
+    minutes_installation = day["minute"].values
+
+    ## figure and axs
+    fig, axs = matplotlib.pyplot.subplots(2, 3)
 
 
-    fig, axs = matplotlib.pyplot.subplots(3, 2)
-    fig.tight_layout()
-    axs[0, 0].plot(minutes, powers)
-    axs[0, 0].plot(minutes_installation, powers_installation)
-    axs[0, 0].set_title("main")
+    c_simulations = config.ORANGE
+    c_installation = "black"
+    c_simulated_installation = config.PURPLE
+
+    ############################ PLOT 0 0
+
+    ## poa simulation of single day
+    poa_installation = pvlib_poa.get_irradiance_with_multiplier(year_n, latitude, longitude, day_n, tilt, azimuth, 19)
+    minutes_simulated_installation = poa_installation.minute.values
+    powers_simulated_installation = poa_installation.POA.values
+
+    axs[0, 0].plot(minutes_simulated_installation, powers_simulated_installation, c=c_simulated_installation)
+    axs[0, 0].plot(minutes_installation, powers_installation, c=config.PURPLE)
+    axs[0, 0].set_title("Control")
+    axs[0, 0].set_yticklabels([])
+    axs[0, 0].set_xticklabels([])
+
+    ############################ PLOT 0 1
+
+    for i in range(-3, 4):
+        poa_installation = pvlib_poa.get_irradiance_with_multiplier(year_n, latitude + i * 5, longitude, day_n, tilt,
+                                                                    azimuth, 19)
+        minutes_simulated_installation = poa_installation.minute.values
+        powers_simulated_installation = poa_installation.POA.values
+        if i == 0:
+            axs[0, 1].plot(minutes_simulated_installation, powers_simulated_installation, c=c_simulated_installation)
+        else:
+            axs[0, 1].plot(minutes_simulated_installation, powers_simulated_installation, c=c_simulations)
+
+    axs[0, 1].set_title("Latitude $ \delta $=10")
+    axs[0, 1].set_yticklabels([])
+    axs[0, 1].set_xticklabels([])
+
+    ############################ PLOT 0 2
+    for i in range(-3, 4):
+        poa_installation = pvlib_poa.get_irradiance_with_multiplier(year_n, latitude, longitude + i * 10, day_n, tilt,
+                                                                    azimuth, 19)
+        minutes_simulated_installation = poa_installation.minute.values
+        powers_simulated_installation = poa_installation.POA.values
+        if i == 0:
+            axs[0, 2].plot(minutes_simulated_installation, powers_simulated_installation, c=c_simulated_installation)
+        else:
+            axs[0, 2].plot(minutes_simulated_installation, powers_simulated_installation, c=c_simulations)
+
+    axs[0, 2].set_title("Longitude $ \delta $=10")
+    axs[0, 2].set_yticklabels([])
+    axs[0, 2].set_xticklabels([])
+    ############################ PLOT 1 0
+    for i in range(-3, 4):
+        poa_installation = pvlib_poa.get_irradiance_with_multiplier(year_n, latitude, longitude, day_n + i * 20, tilt,
+                                                                    azimuth, 19)
+        minutes_simulated_installation = poa_installation.minute.values
+        powers_simulated_installation = poa_installation.POA.values
+        if i == 0:
+            axs[1, 0].plot(minutes_simulated_installation, powers_simulated_installation, c=c_simulated_installation)
+        else:
+            axs[1, 0].plot(minutes_simulated_installation, powers_simulated_installation, c=c_simulations)
+
+    axs[1, 0].set_title("Day $ \delta $=20")
+    axs[1, 0].set_yticklabels([])
+    axs[1, 0].set_xticklabels([])
+    ############################ PLOT 1 1
+    for i in range(-3, 4):
+        poa_installation = pvlib_poa.get_irradiance_with_multiplier(year_n, latitude, longitude, day_n, tilt + i * 10,
+                                                                    azimuth, 19)
+        minutes_simulated_installation = poa_installation.minute.values
+        powers_simulated_installation = poa_installation.POA.values
+        if i == 0:
+            axs[1, 1].plot(minutes_simulated_installation, powers_simulated_installation, c=c_simulated_installation)
+        else:
+            axs[1, 1].plot(minutes_simulated_installation, powers_simulated_installation, c=c_simulations)
+
+    axs[1, 1].set_title("Tilt $ \delta $=10")
+    axs[1, 1].set_yticklabels([])
+    axs[1, 1].set_xticklabels([])
+    ############################ PLOT 1 2
+    for i in range(-3, 4):
+        poa_installation = pvlib_poa.get_irradiance_with_multiplier(year_n, latitude, longitude, day_n, tilt,
+                                                                    azimuth + i * 20, 19)
+        minutes_simulated_installation = poa_installation.minute.values
+        powers_simulated_installation = poa_installation.POA.values
+        if i == 0:
+            axs[1, 2].plot(minutes_simulated_installation, powers_simulated_installation, c=c_simulated_installation)
+        else:
+            axs[1, 2].plot(minutes_simulated_installation, powers_simulated_installation, c=c_simulations)
+
+    axs[1, 2].set_title("Azimuth $ \delta $=20")
+    axs[1, 2].set_yticklabels([])
+    axs[1, 2].set_xticklabels([])
+    ############################
+
+
 
     matplotlib.pyplot.show()
-    
 
-    """
-    axs[1, 0].plot(x, y ** 2)
-    axs[1, 0].set_title("shares x with main")
-    axs[1, 0].sharex(axs[0, 0])
-    axs[0, 1].plot(x + 1, y + 1)
-    axs[0, 1].set_title("unrelated")
-    axs[1, 1].plot(x + 2, y + 2)
-    axs[1, 1].set_title("also unrelated")
-    
-    """
+
 
 
 ####################################
@@ -768,7 +869,9 @@ def intelligent_angling_test():
     matplotlib.pyplot.show()
 
 
-poa_evaluation_plots()
+
+poa_evaluation_single_day()
+#poa_evaluation_plots()
 
 # test_cloud_free_day_finder_visual()
 
