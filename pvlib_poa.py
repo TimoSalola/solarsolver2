@@ -6,6 +6,7 @@ from pvlib import irradiance
 import pandas as pd
 
 import config
+import estimator_mini.pvlib_poa2
 
 
 ############################
@@ -30,6 +31,33 @@ def get_irradiance_with_multiplier(year, lat, lon, day, tilt, facing, multiplier
     irradiance_day["POA"] = irradiance_day["POA"] * multiplier
 
     return irradiance_day
+
+
+def get_irradiance_v2(year, day, lat, lon, tilt, azimuth):
+    """
+    Physically more accurate plane of array irradiance estimation
+    :param year:
+    :param day:
+    :param lat:
+    :param lon:
+    :param tilt:
+    :param azimuth:
+    :return:
+    """
+
+    irradiance = estimator_mini.pvlib_poa2.get_irradiance(year, day, lat, lon, tilt, azimuth)
+
+    return irradiance
+
+
+def get_irradiance_with_multiplier_v2(year, day, lat, lon, tilt, azimuth, multiplier):
+
+    irradiance = get_irradiance_v2(year, day, lat, lon, tilt, azimuth)
+    irradiance["poa"] = irradiance["poa"]*multiplier
+
+    return irradiance
+
+
 
 
 def get_solar_noon(year, day, latitude, longitude):
